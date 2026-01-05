@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Highlighter } from "@/components/ui/highlighter";
 import { Input } from "@/components/ui/input";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Search, Store } from "lucide-react";
@@ -29,7 +30,14 @@ function RouteComponent() {
               <Store className="w-5 h-5" />
             </div>
             <h1 className="text-xl font-bold tracking-tight hidden sm:block">
-              Cápita
+              <Highlighter
+                action="underline"
+                color="#8e51ff"
+                iterations={1}
+                padding={0.5}
+              >
+                Cápita
+              </Highlighter>
             </h1>
           </div>
 
