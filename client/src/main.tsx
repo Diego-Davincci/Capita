@@ -66,7 +66,7 @@ function App() {
           router={router}
           context={{
             // isAuthorized: !error ? true : false,
-            isAuthorized: true,
+            isAuthorized: false,
           }}
         />
       </ReactQueryWrapper>
