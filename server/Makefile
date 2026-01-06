@@ -1,15 +1,20 @@
-MIGRATIONS_PATH = ./internal/db/migrations 
+DRIVER=postgres
+DBSTRING=postgres://admin:root@localhost:5434/monster-stack-go?sslmode=disable
+MIGRATION_DIR=./internal/db/migrations
 
 create_db:
 	@docker compose up --build -d
 
 migration:
-	@goose -s -dir $(MIGRATIONS_PATH) create $(MIGRATION_NAME) sql
+	@goose -s -dir $(MIGRATION_DIR) create $(MIGRATION_NAME) sql
 
-migrate-up:
-	@goose up
+migrate_up:
+	@goose -dir $(MIGRATION_DIR) $(DBSTRING) up 
 
-migrate-down:
-	@goose down
+migrate_down:
+	@goose -dir $(MIGRATION_DIR) $(DBSTRING) down
 
-.PHONY: migration migrate-up migrate-down create_db
+sqlc:
+	sqlc generate
+
+.PHONY: migration migrate_up migrate_down create_db sqlc

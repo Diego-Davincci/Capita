@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Diego-Davincci/Capita/internal/auth"
+	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
 	utils "github.com/Diego-Davincci/Capita/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -36,6 +38,13 @@ func (app *application) mount() http.Handler {
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		utils.WriteResponse(w, http.StatusOK, nil, "Everything OK 🔥")
+	})
+
+	// Auth routes
+	authService := auth.NewAuthService(repo.New(app.db))
+	authController := auth.NewAuthController(authService)
+	r.Route("/auth", func(r chi.Router) {
+		r.Get("/google", authController.GoogleOauth)
 	})
 
 	return r
