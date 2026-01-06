@@ -3,11 +3,11 @@ version: "3.8"
 services:
   db:
     image: postgres:16.3
-    command: -p 5433
-    container_name: bulletproof-monster-stack
+    command: -p 5434
+    container_name: bulletproof-monster-stack-go
     environment:
-      POSTGRES_DB: monster-stack
+      POSTGRES_DB: monster-stack-go
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: root
     ports:
-      - "5433:5433"
+      - "5434:5434"

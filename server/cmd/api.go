@@ -34,9 +34,8 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Timeout(60 * time.Second)) // 1min Timeout for http requests
 
-	// TODO: health router
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		utils.WriteResponse(w, http.StatusOK, nil, "Everything ok 🔥")
+		utils.WriteResponse(w, http.StatusOK, nil, "Everything OK 🔥")
 	})
 
 	return r
