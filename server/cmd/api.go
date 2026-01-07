@@ -12,6 +12,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 type application struct {
@@ -41,10 +43,18 @@ func (app *application) mount() http.Handler {
 	})
 
 	// Auth routes
-	authService := auth.NewAuthService(repo.New(app.db))
-	authController := auth.NewAuthController(authService)
+	oauth2Config := &oauth2.Config{
+		ClientID:     app.config.GoogleClientID,
+		ClientSecret: app.config.GoogleClientSecret,
+		RedirectURL:  app.config.GoogleRedirectURL,
+		Endpoint:     google.Endpoint,
+		Scopes:       []string{"email", "profile"},
+	}
+	authService := auth.NewAuthService(repo.New(app.db), app.config, oauth2Config)
+	authController := auth.NewAuthController(authService, app.config)
 	r.Route("/auth", func(r chi.Router) {
 		r.Get("/google", authController.GoogleOauth)
+		r.Get("/google/callback", authController.GoogleOauthCallback)
 	})
 
 	return r

@@ -12,6 +12,7 @@ type Config struct {
 	DBSource           string        `mapstructure:"DB_SOURCE"`
 	GoogleClientID     string        `mapstructure:"GOOGLE_CLIENT_ID"`
 	GoogleClientSecret string        `mapstructure:"GOOGLE_CLIENT_SECRET"`
+	GoogleRedirectURL  string        `mapstructure:"GOOGLE_REDIRECT_URL"`
 	RefreshTokenKey    string        `mapstructure:"REFRESH_TOKEN_KEY"`
 	RefreshTokenTime   time.Duration `mapstructure:"REFRESH_TOKEN_TIME"`
 	AccessTokenKey     string        `mapstructure:"ACCESS_TOKEN_KEY"`

@@ -1,30 +1,33 @@
 package auth
 
-import repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
+	"github.com/Diego-Davincci/Capita/internal/utils"
+	"golang.org/x/oauth2"
+)
 
 type Service interface {
-	GetGoogleUserTokens(googleCode string) (tokens googleTokensModel, err error)
-	GetGoogleUserData(userTokens googleTokensModel) (user googleUser, err error)
+	GetGoogleUserData(googleCode string, ctx context.Context) (userData googleUser, err error)
+	RedirectToGoogleUrl() string
 }
 
 type authService struct {
-	repo repo.Querier
+	repo         repo.Querier
+	config       utils.Config
+	oauth2Config *oauth2.Config
 }
 
-func NewAuthService(repo repo.Querier) Service {
-	return &authService{repo: repo}
+func NewAuthService(repo repo.Querier, config utils.Config, oauth2Config *oauth2.Config) Service {
+	return &authService{repo: repo, config: config, oauth2Config: oauth2Config}
 }
 
-type googleTokensModel struct {
-	AccessToken  string `json:"access_token"`
-	ExpiresIn    int32  `json:"expires_in"`
-	RefreshToken string `json:"refresh_token"`
-	Scope        string `json:"scope"`
-	IdToken      string `json:"id_token"`
-}
-
-func (s *authService) GetGoogleUserTokens(googleCode string) (tokens googleTokensModel, err error) {
-	return googleTokensModel{}, nil
+func (s *authService) RedirectToGoogleUrl() string {
+	url := s.oauth2Config.AuthCodeURL("secret", oauth2.AccessTypeOffline)
+	return url
 }
 
 type googleUser struct {
@@ -38,6 +41,32 @@ type googleUser struct {
 	Locale        string `json:"locale"`
 }
 
-func (s *authService) GetGoogleUserData(userTokens googleTokensModel) (user googleUser, err error) {
-	return googleUser{}, nil
+func (s *authService) GetGoogleUserData(googleCode string, ctx context.Context) (userData googleUser, err error) {
+
+	// Get access and refresh tokens in exchange for the code
+	t, exchangeErr := s.oauth2Config.Exchange(ctx, googleCode)
+	if exchangeErr != nil {
+		err = fmt.Errorf("there was an error making the request to get google user tokens ---> %s", exchangeErr)
+		return
+	}
+
+	// Make HTTP request to get user data using access token
+	client := s.oauth2Config.Client(ctx, t)
+	rsp, reqErr := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	if reqErr != nil {
+		err = fmt.Errorf("there was an error making the request to get google user data ---> %s", reqErr)
+		return
+	}
+	defer rsp.Body.Close() // Close body data after function finishes
+
+	// Transform rsp.body to JSON
+	var v googleUser
+	decodeErr := json.NewDecoder(rsp.Body).Decode(&v)
+	if decodeErr != nil {
+		err = fmt.Errorf("there was an error decoding user data ---> %s", decodeErr)
+		return
+	}
+	fmt.Printf("%#v\n", v)
+
+	return v, nil
 }
