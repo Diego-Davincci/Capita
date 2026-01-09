@@ -44,7 +44,7 @@ const queryClient = new QueryClient({
       if (error.statusCode >= 500) {
         toast.error(error.name, {
           description: error.message,
-          duration: 1000000, // Crazy time to simulate
+          duration: 1000000, // Crazy time to simulate infinity
           action: {
             label: "Refresh",
             onClick: () => window.location.reload(),

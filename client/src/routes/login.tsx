@@ -5,6 +5,8 @@ import { BorderBeam } from "@/components/ui/border-beam";
 import { Button } from "@/components/ui/button";
 import { Highlighter } from "@/components/ui/highlighter";
 import { API_URL } from "@/lib/utils";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 type LoginParams = {
   err?: string;
@@ -27,9 +29,18 @@ export const Route = createFileRoute("/login")({
 function RouteComponent() {
   const { err } = useSearch({ from: "/login" });
 
+  useEffect(() => {
+    if (err) {
+      toast.error("Tu autenticación con google ha fallado 😢", {
+        duration: 60000,
+        position: "top-center",
+      });
+    }
+  }, [err]);
+
   return (
     <main className="w-full min-h-screen flex items-center justify-center bg-linear-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e]">
-      <section className="flex flex-col max-w-6xl justify-center items-center gap-y-5 mx-10">
+      <section className="flex flex-col max-w-6xl justify-center items-center gap-y-5 mx-10 my-7">
         {/* Logo */}
         <div className="size-16 sm:size-20 bg-linear-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center shadow-[0px_0px_40px] shadow-primary hover:shadow-[0px_0px_50px] transition-shadow">
           <Store className="size-10 sm:size-8" />
@@ -43,12 +54,13 @@ function RouteComponent() {
               color="#8e51ff"
               iterations={3}
               padding={1}
+              animationDuration={2000}
             >
               <span className="tracking-tight">Cápita</span>
             </Highlighter>
             {/* Description */}
           </h1>
-          <p className="text-center text-zinc-400 text-[15px] sm:text-base">
+          <p className="text-center text-muted-foreground text-[15px] sm:text-base">
             Promociona y descubre productos y servicios dentro de la UNAL sede{" "}
             <br className="hidden sm:block" />
             Medallo, solo para miembros de la universidad !
@@ -56,10 +68,10 @@ function RouteComponent() {
         </div>
 
         {/* Card */}
-        <div className="flex items-center justify-start bg-linear-to-br from-violet-400/20 to-purple-500/20 rounded-3xl mt-5 overflow-hidden relative border">
+        <div className="flex items-center justify-start bg-linear-to-br from-violet-400/20 to-purple-500/20 rounded-3xl mt-5 overflow-hidden relative border max-w-xl">
           <div className="px-10 py-8 flex flex-col items-center gap-y-2">
             <h2 className="font-semibold text-xl">Iniciar Sesión</h2>
-            <p className="text-zinc-400 text-center sm:text-base text-[15px]">
+            <p className="text-muted-foreground text-center sm:text-base text-[15px]">
               Crea tu cuenta con 1 click. Solo si perteneces a la UNAL 😎
             </p>
             <a href={`${API_URL}/auth/google`}>
@@ -97,7 +109,13 @@ function RouteComponent() {
                 Continuar con Google
               </Button>
             </a>
-            <p className="text-zinc-400 text-sm text-center">
+            {err && (
+              <p className="text-red-400 text-center py-2">
+                Ha hábido un problema para autenticarte con google, por favor
+                intentalo de nuevo !
+              </p>
+            )}
+            <p className="text-muted-foreground text-sm text-center">
               Prontamente : Términos y Condiciones...
             </p>
           </div>
@@ -111,7 +129,7 @@ function RouteComponent() {
         </div>
 
         {/* Made by me 💚 */}
-        <p className="text-xs text-zinc-400 mt-10 text-center">
+        <p className="text-xs text-muted-foreground mt-10 text-center">
           Hecho con 💚 por{" "}
           <a
             className="underline"
@@ -123,15 +141,6 @@ function RouteComponent() {
           , para la Unal sede Medallo.
         </p>
       </section>
-      {/* {err && (
-        <Alert variant={"destructive"} className="max-w-md">
-          <AlertCircleIcon />
-          <AlertTitle>{"Google Login failed"}</AlertTitle>
-          <AlertDescription>
-            <p>{err}</p>
-          </AlertDescription>
-        </Alert>
-      )} */}
     </main>
   );
 }

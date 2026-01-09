@@ -14,7 +14,8 @@ export const useStore = create<State & Actions>()((set) => ({
     userID: 0,
     username: "",
     email: "",
-    picture: null,
+    picture: "",
+    isUserValid: true,
   },
   updateUser: (userData) =>
     set((store) => ({

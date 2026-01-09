@@ -3,14 +3,14 @@ import { createRoot } from "react-dom/client";
 import { Navigate, RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen.ts";
 import { Toaster } from "sonner";
+import * as motion from "motion/react-client";
 
 import "./index.css";
 import ReactQueryWrapper from "./lib/api/query-client.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
-// import { useMe } from "./hooks/use-me.ts";
-// import { SparklesText } from "./components/ui/sparkles-text.tsx";
-// import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert.tsx";
-// import { AlertCircleIcon } from "lucide-react";
+import { useMe } from "./hooks/use-me.ts";
+import { Store } from "lucide-react";
+import { Highlighter } from "./components/ui/highlighter.tsx";
 
 const router = createRouter({
   routeTree,
@@ -29,20 +29,39 @@ declare module "@tanstack/react-router" {
 }
 
 function App() {
-  // const { loading, error } = useMe();
+  const { loading, error } = useMe();
 
-  // if (loading) {
-  //   return (
-  //     <main className="min-h-screen w-full flex items-center justify-center">
-  //       <SparklesText
-  //         className="text-xl font-bold tracking-wide"
-  //         sparklesCount={5}
-  //       >
-  //         Loading..
-  //       </SparklesText>
-  //     </main>
-  //   );
-  // }
+  if (loading) {
+    return (
+      <main className="min-h-screen w-full flex items-center justify-center bg-linear-to-b from-[#1a0b2e] to-[#2d1b4e]">
+        <section className="max-w-5xl flex flex-col gap-y-5 my-7 mx-10 items-center justify-center">
+          {/* Logo */}
+          <motion.div
+            className="size-16 sm:size-20 bg-linear-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center shadow-[0px_0px_40px] shadow-primary hover:shadow-[0px_0px_50px] transition-shadow"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              duration: 0.5,
+              scale: { type: "spring", visualDuration: 0.4, bounce: 0.5 },
+            }}
+          >
+            <Store className="size-12 sm:size-10" />
+          </motion.div>
+          <h1 className="text-xl sm:text-3xl font-bold text-center">
+            <Highlighter
+              action="underline"
+              color="#8e51ff"
+              iterations={3}
+              padding={1}
+              animationDuration={500}
+            >
+              <span className="tracking-tight">Cápita</span>
+            </Highlighter>
+          </h1>
+        </section>
+      </main>
+    );
+  }
 
   // if (error && error.statusCode >= 500) {
   //   return (
@@ -65,8 +84,7 @@ function App() {
         <RouterProvider
           router={router}
           context={{
-            // isAuthorized: !error ? true : false,
-            isAuthorized: false,
+            isAuthorized: !error ? true : false,
           }}
         />
       </ReactQueryWrapper>

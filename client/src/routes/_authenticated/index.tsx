@@ -1,6 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Highlighter } from "@/components/ui/highlighter";
 import { Input } from "@/components/ui/input";
+import { useStore } from "@/store";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Search, Store } from "lucide-react";
 
@@ -10,6 +11,8 @@ export const Route = createFileRoute("/_authenticated/")({
 
 function RouteComponent() {
   const navigate = useNavigate();
+
+  const user = useStore((store) => store.user);
 
   const username = "Daniela Migajos";
 

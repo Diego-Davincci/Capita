@@ -24,38 +24,52 @@ The API has a feature based architecture to separate specific concerns, logic, a
 <br/>
 
 ```
-src/
-├── index.ts    # Main API setup
+server/
+├── cmd/                              # 🚀 Application entry point & initialization
+│   ├── main.go                       # Application setup and dependency injection
+│   └── api.go                        # HTTP server configuration and route setup
 │
-├── config/                   # 🔧 Configuration files
-│   ├── auth.config.ts        # Auth settings (tokens, cookies, validation rules)
-│   └── passport.config.ts    # Passport strategies setup (Google OAuth)
-|
-├── db/                       # 🗄️ Database layer (centralized)
-│   ├── client.ts             # Drizzle ORM client initialization & pool
-│   ├── schema.ts             # All table definitions (users, auth_providers)
-│   └── migrations/           # Auto-generated Drizzle migrations (version-controlled)
-│
-├── middlewares/              # ⚙️ Express middlewares
-│   └── auth.middleware.ts    # JWT verification & token refresh logic
-│
-├── modules/                  # 🎯 Feature modules (domain-driven)
-│   ├── _shared/              # Shared utilities across modules
+├── internal/
+│   ├── auth/                         # 🔐 Authentication feature (domain)
+│   │   ├── __tests__/                # Tests for auth feature
+│   │   │   ├── controller_test.go    # Controller layer tests
+│   │   │   ├── service_test.go       # Service layer tests & business logic
+│   │   │   ├── middleware_test.go    # Middleware & authentication logic tests
+│   │   │   └── mocks/                # Mock objects and test helpers
+│   │   │
+│   │   ├── controller.go             # HTTP request handlers & response formatting
+│   │   ├── service.go                # Business logic (OAuth, token creation, user operations)
+│   │   ├── middleware.go             # JWT verification & token refresh logic
+│   │   └── types.go                  # Auth domain-specific types
 │   │
-│   └── auth/                           # Authentication feature
-|       ├── __tests__                   # Provide meaningful and isolated test cases for every layer
-│       ├── auth.routes.ts              # All auth endpoints
-│       ├── auth.controller.ts          # Request handlers & response formatting
-│       ├── auth.service.ts             # Core business logic
-│       └── auth.repository.ts          # Database queries specific to auth (user lookups)
+│   ├── db/                           # 🗄️ Database layer (centralized)
+│   │   ├── migrations/               # Version-controlled SQL migrations (goose format)
+│   │   │   └── 00001_users_table.sql
+│   │   │
+│   │   ├── queries/                  # SQL query definitions (for sqlc generation)
+│   │   │   └── users.sql
+│   │   │
+│   │   └── sqlc/                     # Auto-generated code from sqlc (don't edit manually)
+│   │       ├── db.go                 # Database connection setup
+│   │       ├── models.go             # Generated database models
+│   │       ├── querier.go            # Generated query interface
+│   │       └── users.sql.go          # Generated user queries
+│   │
+│   └── utils/                        # 🛠️ Shared utilities across the application
+│       ├── env.go                    # Environment variables loader & type-safe access
+│       ├── context.go                # Context keys for request data passing
+│       ├── json.go                   # Standardized JSON response builder
+│       ├── jwt.go                    # Token creation, verification & validation
+│       └── errors.go                 # Application-level error definitions
 │
-├── types/                    # 📝 TypeScript type definitions
-│   └── index.ts              # Global type exports & interfaces
-│
-├── utils/                    # 🛠️ Utility functions
-│   ├── env.ts                # Environment variables loader & type-safe access
-│   ├── constants.ts          # App constants (production flag, HTTP codes)
-│   ├── json.ts               # Standardized JSON response builder
-│   ├── token.ts              # Token creation, verification & cookie management
-│
+├── .env.example                      # Environment variables template
+├── .gitignore                        # Git ignore rules
+├── docker-compose.yml                # PostgreSQL database setup
+├── Dockerfile                        # Container image definition
+├── Makefile                          # Build and database management commands
+├── sqlc.yaml                         # sqlc configuration for code generation
+├── go.mod                            # Go module dependencies
+├── go.sum                            # Dependency checksums
+├── .air.toml                         # Hot-reload configuration for development
+└── README.md                         # This file
 ```

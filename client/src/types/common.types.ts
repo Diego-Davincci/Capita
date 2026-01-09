@@ -8,5 +8,6 @@ export interface User {
   userID: number;
   email: string;
   username: string;
-  picture: string | null;
+  picture: string;
+  isUserValid: boolean;
 }

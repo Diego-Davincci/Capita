@@ -55,7 +55,7 @@ func (c *authController) GoogleOauthCallback(w http.ResponseWriter, r *http.Requ
 
 func (c *authController) Me(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(utils.UserContextKey).(int64)
-	log.Println("user id", userID)
+	// log.Println("user id", userID)
 
 	user, err := c.service.GetUser(r.Context(), userID)
 	if err != nil {
