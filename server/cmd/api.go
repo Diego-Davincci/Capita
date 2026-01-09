@@ -24,6 +24,8 @@ type application struct {
 func (app *application) mount() http.Handler {
 	r := chi.NewRouter()
 
+	// TODO: add rate-limiter
+
 	// Server rules
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{app.config.Website}, // Only this website domain can make http request to this server
@@ -50,11 +52,14 @@ func (app *application) mount() http.Handler {
 		Endpoint:     google.Endpoint,
 		Scopes:       []string{"email", "profile"},
 	}
-	authService := auth.NewAuthService(repo.New(app.db), app.config, oauth2Config)
+	repository := repo.New(app.db)
+	authService := auth.NewAuthService(repository, app.config, oauth2Config)
+	authMiddleware := auth.NewAuthMiddleware(authService, repository, app.config)
 	authController := auth.NewAuthController(authService, app.config)
 	r.Route("/auth", func(r chi.Router) {
 		r.Get("/google", authController.GoogleOauth)
 		r.Get("/google/callback", authController.GoogleOauthCallback)
+		r.With(authMiddleware.Auth).Get("/me", authController.Me)
 	})
 
 	return r

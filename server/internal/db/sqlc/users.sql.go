@@ -9,8 +9,8 @@ import (
 	"context"
 )
 
-const createUser = `-- name: CreateUser :exec
-INSERT INTO users (social_id, email, username, picture) VALUES ($1, $2, $3, $4)
+const createUser = `-- name: CreateUser :one
+INSERT INTO users (social_id, email, username, picture) VALUES ($1, $2, $3, $4) RETURNING user_id, social_id, email, username, picture, is_user_valid, registered_at
 `
 
 type CreateUserParams struct {
@@ -20,12 +20,97 @@ type CreateUserParams struct {
 	Picture  string `json:"picture"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.Exec(ctx, createUser,
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser,
 		arg.SocialID,
 		arg.Email,
 		arg.Username,
 		arg.Picture,
 	)
-	return err
+	var i User
+	err := row.Scan(
+		&i.UserID,
+		&i.SocialID,
+		&i.Email,
+		&i.Username,
+		&i.Picture,
+		&i.IsUserValid,
+		&i.RegisteredAt,
+	)
+	return i, err
+}
+
+const getUserByID = `-- name: GetUserByID :one
+SELECT user_id as "userID", email, username, picture, is_user_valid as "isUserValid" FROM users WHERE user_id = $1
+`
+
+type GetUserByIDRow struct {
+	UserID      int64  `json:"userID"`
+	Email       string `json:"email"`
+	Username    string `json:"username"`
+	Picture     string `json:"picture"`
+	IsUserValid bool   `json:"isUserValid"`
+}
+
+func (q *Queries) GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow, error) {
+	row := q.db.QueryRow(ctx, getUserByID, userID)
+	var i GetUserByIDRow
+	err := row.Scan(
+		&i.UserID,
+		&i.Email,
+		&i.Username,
+		&i.Picture,
+		&i.IsUserValid,
+	)
+	return i, err
+}
+
+const getUserBySocialID = `-- name: GetUserBySocialID :one
+SELECT user_id, social_id, email, username, picture, is_user_valid, registered_at FROM users WHERE social_id = $1
+`
+
+func (q *Queries) GetUserBySocialID(ctx context.Context, socialID string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserBySocialID, socialID)
+	var i User
+	err := row.Scan(
+		&i.UserID,
+		&i.SocialID,
+		&i.Email,
+		&i.Username,
+		&i.Picture,
+		&i.IsUserValid,
+		&i.RegisteredAt,
+	)
+	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users SET email =  $1, username = $2, picture = $3 WHERE user_id = $4 RETURNING user_id, social_id, email, username, picture, is_user_valid, registered_at
+`
+
+type UpdateUserParams struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Picture  string `json:"picture"`
+	UserID   int64  `json:"user_id"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.Email,
+		arg.Username,
+		arg.Picture,
+		arg.UserID,
+	)
+	var i User
+	err := row.Scan(
+		&i.UserID,
+		&i.SocialID,
+		&i.Email,
+		&i.Username,
+		&i.Picture,
+		&i.IsUserValid,
+		&i.RegisteredAt,
+	)
+	return i, err
 }

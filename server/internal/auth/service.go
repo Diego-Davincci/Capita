@@ -4,15 +4,21 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 
 	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
 	"github.com/Diego-Davincci/Capita/internal/utils"
+	"github.com/jackc/pgx/v5"
 	"golang.org/x/oauth2"
 )
 
 type Service interface {
-	GetGoogleUserData(googleCode string, ctx context.Context) (userData googleUser, err error)
 	RedirectToGoogleUrl() string
+	GetGoogleUserData(ctx context.Context, googleCode string) (userData googleUser, err error)
+	UpsertUser(ctx context.Context, userData googleUser) (user repo.User, err error)
+	SetAuthCookies(w http.ResponseWriter, userID int64) (err error)
+	GetUser(ctx context.Context, userID int64) (user repo.GetUserByIDRow, err error)
 }
 
 type authService struct {
@@ -41,12 +47,12 @@ type googleUser struct {
 	Locale        string `json:"locale"`
 }
 
-func (s *authService) GetGoogleUserData(googleCode string, ctx context.Context) (userData googleUser, err error) {
+func (s *authService) GetGoogleUserData(ctx context.Context, googleCode string) (userData googleUser, err error) {
 
 	// Get access and refresh tokens in exchange for the code
 	t, exchangeErr := s.oauth2Config.Exchange(ctx, googleCode)
 	if exchangeErr != nil {
-		err = fmt.Errorf("there was an error making the request to get google user tokens ---> %s", exchangeErr)
+		err = fmt.Errorf("error making the request to get google user tokens ---> %s", exchangeErr)
 		return
 	}
 
@@ -54,7 +60,7 @@ func (s *authService) GetGoogleUserData(googleCode string, ctx context.Context) 
 	client := s.oauth2Config.Client(ctx, t)
 	rsp, reqErr := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if reqErr != nil {
-		err = fmt.Errorf("there was an error making the request to get google user data ---> %s", reqErr)
+		err = fmt.Errorf("error making the request to get google user data ---> %s", reqErr)
 		return
 	}
 	defer rsp.Body.Close() // Close body data after function finishes
@@ -63,10 +69,79 @@ func (s *authService) GetGoogleUserData(googleCode string, ctx context.Context) 
 	var v googleUser
 	decodeErr := json.NewDecoder(rsp.Body).Decode(&v)
 	if decodeErr != nil {
-		err = fmt.Errorf("there was an error decoding user data ---> %s", decodeErr)
+		err = fmt.Errorf("error decoding user data ---> %s", decodeErr)
 		return
 	}
-	fmt.Printf("%#v\n", v)
+	// fmt.Printf("%#v\n", v)
 
 	return v, nil
+}
+
+func (s *authService) UpsertUser(ctx context.Context, userData googleUser) (user repo.User, err error) {
+	// Does the user exist ?
+	user, getUserErr := s.repo.GetUserBySocialID(ctx, userData.Id)
+
+	// If no user returned, create a new one
+	if getUserErr == pgx.ErrNoRows {
+		createUserParams := repo.CreateUserParams{SocialID: userData.Id, Email: userData.Email, Username: userData.Name, Picture: userData.Picture}
+		userCreated, createUserErr := s.repo.CreateUser(ctx, createUserParams)
+		if createUserErr != nil {
+			err = fmt.Errorf("error creating a new user %s", getUserErr)
+			return
+		}
+		return userCreated, nil
+	}
+
+	// If there's an error when getting the user, and it's not related to 0 returned rows, return the err
+	if getUserErr != nil {
+		err = fmt.Errorf("error fetching user by 'social_id' %s", getUserErr)
+		return
+	}
+
+	// If user exists, update info (user google info might not change that often, but it's better to run the update)
+	updateUserParams := repo.UpdateUserParams{Email: userData.Email, Username: userData.Name, Picture: userData.Picture, UserID: user.UserID}
+	updatedUser, updateUserErr := s.repo.UpdateUser(ctx, updateUserParams)
+	if updateUserErr != nil {
+		err = fmt.Errorf("error updating user %s", getUserErr)
+		return
+	}
+
+	return updatedUser, nil
+}
+
+func (s *authService) SetAuthCookies(w http.ResponseWriter, userID int64) (err error) {
+
+	refreshToken, accessToken, err := utils.CreateTokens(userID, s.config.RefreshTokenKey, s.config.AccessTokenKey, s.config.RefreshTokenTime, s.config.AccessTokenTime)
+	if err != nil {
+		return
+	}
+
+	// TODO: if we get a domain, set SameSite to 'lax'
+	var sameSite http.SameSite
+	var domain string
+	if s.config.Domain != "localhost" {
+		sameSite = http.SameSiteNoneMode
+		domain = ""
+	} else {
+		sameSite = http.SameSiteLaxMode
+		domain = s.config.Domain
+	}
+
+	maxTime := 315360000000 // 10 year
+	http.SetCookie(w, &http.Cookie{Name: "rt", Value: refreshToken, Path: "/", Domain: domain, Secure: s.config.SecureCookies, HttpOnly: true, SameSite: sameSite, MaxAge: maxTime})
+	http.SetCookie(w, &http.Cookie{Name: "at", Value: accessToken, Path: "/", Domain: domain, Secure: s.config.SecureCookies, HttpOnly: true, SameSite: sameSite, MaxAge: maxTime})
+
+	return nil
+}
+
+func (s *authService) GetUser(ctx context.Context, userID int64) (user repo.GetUserByIDRow, err error) {
+	user, getUserErr := s.repo.GetUserByID(ctx, userID)
+
+	if getUserErr != nil {
+		err = fmt.Errorf("error getting user %s", getUserErr)
+		log.Println(err)
+		return repo.GetUserByIDRow{}, err
+	}
+
+	return
 }
