@@ -11,7 +11,7 @@ export const Navbar = () => {
   const user = useStore((store) => store.user);
 
   return (
-    <header className="w-full border-b sticky top-0 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e] backdrop-blur-xl">
+    <header className="w-full border-b sticky top-0 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e] backdrop-blur-xl z-0">
       {/* Main Navigation */}
       <nav className="w-full h-full flex py-4 sm:px-20 px-5 justify-between items-center max-w-7xl m-auto">
         {/* Left */}
