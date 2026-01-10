@@ -28,7 +28,7 @@ export const getHttpRequest = async <Response>(
     // Check if there's a server internal error, status code = 5xx
     if (rsp.statusCode >= 500) {
       const apiError = createNewApiError({
-        errorTitle: "Something went wrong!",
+        errorTitle: "Algo ha salido mal !",
         errorMsg: rsp.message,
         statusCode: rsp.statusCode,
       });
@@ -109,7 +109,7 @@ export const mutationHttpRequest = async <Payload, Response>({
     // Check if there's a server internal error, status code = 5xx
     if (rsp.statusCode >= 500) {
       const apiError = createNewApiError({
-        errorTitle: "Something went wrong!",
+        errorTitle: "Algo ha salido mal !",
         errorMsg: rsp.message,
         statusCode: rsp.statusCode,
       });

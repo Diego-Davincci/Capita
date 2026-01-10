@@ -9,8 +9,9 @@ import "./index.css";
 import ReactQueryWrapper from "./lib/api/query-client.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
 import { useMe } from "./hooks/use-me.ts";
-import { Store } from "lucide-react";
+import { AlertCircleIcon, Store } from "lucide-react";
 import { Highlighter } from "./components/ui/highlighter.tsx";
+import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert.tsx";
 
 const router = createRouter({
   routeTree,
@@ -63,19 +64,19 @@ function App() {
     );
   }
 
-  // if (error && error.statusCode >= 500) {
-  //   return (
-  //     <main className="min-h-screen w-full flex items-center justify-center">
-  //       <Alert variant={"destructive"} className="max-w-md">
-  //         <AlertCircleIcon />
-  //         <AlertTitle>{error?.name}</AlertTitle>
-  //         <AlertDescription>
-  //           <p>{error?.message}</p>
-  //         </AlertDescription>
-  //       </Alert>
-  //     </main>
-  //   );
-  // }
+  if (error && error.statusCode >= 500) {
+    return (
+      <main className="min-h-screen w-full flex items-center justify-center bg-linear-to-b from-[#1a0b2e] to-[#2d1b4e]">
+        <Alert variant={"destructive"} className="max-w-md">
+          <AlertCircleIcon />
+          <AlertTitle>{error?.name}</AlertTitle>
+          <AlertDescription>
+            <p>{error?.message}</p>
+          </AlertDescription>
+        </Alert>
+      </main>
+    );
+  }
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="capita-dark-theme">

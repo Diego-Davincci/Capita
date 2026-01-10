@@ -135,6 +135,7 @@ func (s *authService) SetAuthCookies(w http.ResponseWriter, userID int64) (err e
 }
 
 func (s *authService) GetUser(ctx context.Context, userID int64) (user repo.GetUserByIDRow, err error) {
+
 	user, getUserErr := s.repo.GetUserByID(ctx, userID)
 
 	if getUserErr != nil {

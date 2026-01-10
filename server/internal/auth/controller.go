@@ -59,7 +59,7 @@ func (c *authController) Me(w http.ResponseWriter, r *http.Request) {
 
 	user, err := c.service.GetUser(r.Context(), userID)
 	if err != nil {
-		log.Panicln(err)
+		log.Println(err)
 		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
 		return
 	}
