@@ -1,19 +1,28 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 
 import { useStore } from "@/store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Highlighter } from "@/components/ui/highlighter";
 import { Input } from "@/components/ui/input";
 import { Search, Store } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export const Navbar = () => {
+  const location = useLocation();
+  const pathNotHome = location.href !== "/";
+
   const navigate = useNavigate();
   const user = useStore((store) => store.user);
 
+  const [highlightAnimation, setHighlightAnimation] = useState<boolean>(false);
+  useEffect(() => {
+    setHighlightAnimation(true);
+  }, []);
+
   return (
-    <header className="w-full border-b sticky top-0 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e] backdrop-blur-xl z-0">
+    <header className="w-[95%] m-auto border sticky top-2 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e]/80 backdrop-blur-xl z-50 rounded-3xl">
       {/* Main Navigation */}
-      <nav className="w-full h-full flex py-4 sm:px-20 px-5 justify-between items-center max-w-7xl m-auto">
+      <nav className="w-full h-full flex py-4 sm:px-10 px-5 justify-between items-center max-w-7xl m-auto">
         {/* Left */}
         <div
           className="flex items-center justify-center gap-x-2 cursor-pointer"
@@ -23,11 +32,14 @@ export const Navbar = () => {
             <Store className="w-5 h-5" />
           </div>
           <h1 className="text-xl font-bold tracking-tight hidden sm:block">
+            {/* TODO: prevent animation from re-rendering */}
             <Highlighter
               action="underline"
               color="#8e51ff"
               iterations={1}
+              multiline={true}
               padding={0.5}
+              isView={highlightAnimation}
             >
               Cápita
             </Highlighter>
@@ -41,13 +53,14 @@ export const Navbar = () => {
             <Input
               className="border-primary/70 pl-10 hover:shadow-md hover:shadow-primary/40 transition-all focus:border-primary/50! focus:ring-primary/50!"
               placeholder="Busca subcripciones de streaming, auriculares, productos..."
+              disabled={pathNotHome}
             />
           </div>
         </div>
 
         {/* Right */}
         <div onClick={() => navigate({ to: "/profile" })}>
-          <Avatar className="cursor-pointer size-9 hover:scale-110 transition-all active:scale-100">
+          <Avatar className="cursor-pointer size-10 hover:scale-110 transition-all active:scale-100">
             <AvatarImage src={user.picture} alt="User Img" />
             <AvatarFallback className="bg-violet-500 text-white">
               {user.username[0]}

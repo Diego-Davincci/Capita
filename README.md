@@ -20,16 +20,3 @@ Making it easier to find what you're looking for and also to promote your own lo
 ## Deployment
 
 Railway !!
-
-## Project Features
-
-Client
-
-- Choose UI/UX ✅
-- Login Page ✅
-- Connect to Backend API Google login
-
-Server
-
-- Setup Backend API folder structure + stack 🔨
-- Create DB schemas for auth system
