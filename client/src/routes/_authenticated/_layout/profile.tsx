@@ -11,6 +11,8 @@ export const Route = createFileRoute("/_authenticated/_layout/profile")({
 });
 
 function RouteComponent() {
+  // TODO: finish responsiveness
+
   return (
     <section className="w-3/5 max-w-7xl m-auto flex flex-col py-10">
       {/* Title */}

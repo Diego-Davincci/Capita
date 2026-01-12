@@ -54,7 +54,12 @@ export const ShopInformation = () => {
             Nombre de la Tienda
           </Label>
           <div className="space-y-0.5">
-            <Input id="shop-name" placeholder="Ej: Accesorios Danielita 💍" />
+            <Input
+              id="shop-name"
+              placeholder="Ej: Accesorios Danielita 💍"
+              value={shopName}
+              onChange={(e) => setShopName(e.target.value)}
+            />
             {findFieldError("shopName", shopDetailsErrs) && (
               <span className="text-sm text-destructive">
                 {findFieldError("shopName", shopDetailsErrs)!.message}
@@ -74,6 +79,8 @@ export const ShopInformation = () => {
             id="shop-description"
             className="h-52"
             placeholder="Vendemos anillos, aretas, relojes ⌚️, gafas 👓 y muchos más accesorios con los mejores descuentos 🔥"
+            value={shopDescription}
+            onChange={(e) => setShopDescription(e.target.value)}
           />
         </div>
         {/* Whatsapp link */}
@@ -89,6 +96,8 @@ export const ShopInformation = () => {
             <Input
               id="shop-link"
               placeholder="https://whatsapp.com/channel/0029VaeyO64LNSa1krjoqw3w"
+              value={shopWhatsappLink}
+              onChange={(e) => setShopWhatsappLink(e.target.value)}
             />
             <span className="text-xs text-muted-foreground">
               L@s comprador@s podrán contactarte directamente por WhatsApp
