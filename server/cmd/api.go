@@ -7,6 +7,7 @@ import (
 
 	"github.com/Diego-Davincci/Capita/internal/auth"
 	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
+	"github.com/Diego-Davincci/Capita/internal/posts"
 	utils "github.com/Diego-Davincci/Capita/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -44,6 +45,8 @@ func (app *application) mount() http.Handler {
 		utils.WriteResponse(w, http.StatusOK, nil, "Everything OK 🔥")
 	})
 
+	repository := repo.New(app.db)
+
 	// Auth routes
 	oauth2Config := &oauth2.Config{
 		ClientID:     app.config.GoogleClientID,
@@ -52,7 +55,6 @@ func (app *application) mount() http.Handler {
 		Endpoint:     google.Endpoint,
 		Scopes:       []string{"email", "profile"},
 	}
-	repository := repo.New(app.db)
 	authService := auth.NewAuthService(repository, app.config, oauth2Config)
 	authMiddleware := auth.NewAuthMiddleware(authService, repository, app.config)
 	authController := auth.NewAuthController(authService, app.config)
@@ -60,6 +62,13 @@ func (app *application) mount() http.Handler {
 		r.Get("/google", authController.GoogleOauth)
 		r.Get("/google/callback", authController.GoogleOauthCallback)
 		r.With(authMiddleware.Auth).Get("/me", authController.Me)
+	})
+
+	// Post routes
+	postsService := posts.NewPostsService(repository)
+	postsController := posts.NewPostsController(postsService)
+	r.Route("/posts", func(r chi.Router) {
+		r.Post("/", postsController.HandlePosts)
 	})
 
 	return r

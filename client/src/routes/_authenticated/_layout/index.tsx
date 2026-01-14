@@ -113,6 +113,17 @@ function RouteComponent() {
         </Button>
       </div>
       {/* Feed */}
+      <div className="w-full mt-10 flex flex-col">
+        <h2 className="text-2xl font-semibold tracking-tight">
+          Lo más Nuevo 🔥
+        </h2>
+
+        <div className="w-full mt-2 grid grid-cols-4">
+          {/* Posts */}
+          <div className="rounded-2xl"></div>
+        </div>
+        {/* Footer */}
+      </div>
     </section>
   );
 }
