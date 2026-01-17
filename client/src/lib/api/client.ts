@@ -37,7 +37,7 @@ export const getHttpRequest = async <Response>(
     // Check if user is unathorized, status code = 401
     if (rsp.statusCode === 401) {
       const apiError = createNewApiError({
-        errorTitle: "Unauthorized",
+        errorTitle: "No autorizado !",
         errorMsg: rsp.message,
         statusCode: rsp.statusCode,
       });
@@ -46,7 +46,7 @@ export const getHttpRequest = async <Response>(
     // Check if there was bad user input, status code = 400
     if (rsp.statusCode === 400) {
       const apiError = createNewApiError({
-        errorTitle: "Bad input",
+        errorTitle: "Mala petición !",
         errorMsg: rsp.message,
         statusCode: rsp.statusCode,
       });
@@ -64,7 +64,7 @@ export const getHttpRequest = async <Response>(
 
     // Server is probably down
     const newApiError = createNewApiError({
-      errorTitle: "Server is probably down!",
+      errorTitle: "El servidor probablemente esta caido !",
       errorMsg: "",
       statusCode: 500,
     });
@@ -118,7 +118,7 @@ export const mutationHttpRequest = async <Payload, Response>({
     // Check if user is unathorized, status code = 401
     if (rsp.statusCode === 401) {
       const apiError = createNewApiError({
-        errorTitle: "Unauthorized",
+        errorTitle: "No autorizado !",
         errorMsg: rsp.message,
         statusCode: rsp.statusCode,
       });
@@ -127,7 +127,7 @@ export const mutationHttpRequest = async <Payload, Response>({
     // Check is there was bad user input, status code = 4xx
     if (rsp.statusCode === 400) {
       const apiError = createNewApiError({
-        errorTitle: "Bad input",
+        errorTitle: "Mala petición !",
         errorMsg: rsp.message,
         statusCode: rsp.statusCode,
       });
@@ -145,7 +145,7 @@ export const mutationHttpRequest = async <Payload, Response>({
 
     // Server is probably down
     const newApiError = createNewApiError({
-      errorTitle: "Server is probably down!",
+      errorTitle: "El servidor probablemente esta caido !",
       errorMsg: "",
       statusCode: 500,
     });

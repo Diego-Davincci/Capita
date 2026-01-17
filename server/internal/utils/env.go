@@ -20,6 +20,11 @@ type Config struct {
 	SecureCookies      bool          `mapstructure:"SECURE_COOKIES"`
 	Website            string        `mapstructure:"WEBSITE"`
 	Domain             string        `mapstructure:"DOMAIN"`
+
+	// S3
+	BucketName string `mapstructure:"BUCKET_NAME"`
+	S3Region   string `mapstructure:"S3_REGION"`
+	UploadDir  string `mapstructure:"UPLOAD_DIR"`
 }
 
 // LoadConfig reads configuration from environment variables

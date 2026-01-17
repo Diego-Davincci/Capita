@@ -9,6 +9,7 @@ import (
 // Consistent errors to return to clients
 var (
 	ErrInternalServerProblem = errors.New("ha ocurrido un problema con tu petición")
+	ErrBadRequest            = errors.New("la petición no es correcta")
 )
 
 // Consistent response struct to clients

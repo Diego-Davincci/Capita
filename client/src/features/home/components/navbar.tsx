@@ -6,6 +6,14 @@ import { Highlighter } from "@/components/ui/highlighter";
 import { Input } from "@/components/ui/input";
 import { Search, Store } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export const Navbar = () => {
   const location = useLocation();
@@ -18,6 +26,10 @@ export const Navbar = () => {
   useEffect(() => {
     setHighlightAnimation(true);
   }, []);
+
+  const [open, setOpen] = useState<boolean>(false);
+
+  // TODO: sell modal, responsive navbar
 
   return (
     <header className="w-[95%] m-auto border sticky top-2 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e]/80 backdrop-blur-xl z-50 rounded-3xl">
@@ -32,7 +44,6 @@ export const Navbar = () => {
             <Store className="w-5 h-5" />
           </div>
           <h1 className="text-xl font-bold tracking-tight hidden sm:block">
-            {/* TODO: prevent animation from re-rendering */}
             <Highlighter
               action="underline"
               color="#8e51ff"
@@ -59,15 +70,49 @@ export const Navbar = () => {
         </div>
 
         {/* Right */}
-        <div onClick={() => navigate({ to: "/profile" })}>
-          <Avatar className="cursor-pointer size-10 hover:scale-110 transition-all active:scale-100">
-            <AvatarImage src={user.picture} alt="User Img" />
-            <AvatarFallback className="bg-violet-500 text-white">
-              {user.username[0]}
-            </AvatarFallback>
-          </Avatar>
+        <div className="flex items-center gap-x-3">
+          <Button
+            size={"lg"}
+            className={
+              "bg-linear-to-br from-primary to-fuchsia-500 cursor-pointer font-semibold text-base hover:scale-[1.05] transition-all active:scale-100"
+            }
+            onClick={() => setOpen(true)}
+          >
+            🤑 Vender
+          </Button>
+
+          <div onClick={() => navigate({ to: "/profile" })}>
+            <Avatar className="cursor-pointer size-10 hover:scale-110 transition-all active:scale-100">
+              <AvatarImage src={user.picture} alt="User Img" />
+              <AvatarFallback className="bg-violet-500 text-white">
+                {user.username[0]}
+              </AvatarFallback>
+            </Avatar>
+          </div>
         </div>
       </nav>
+      {/* Sell Modal */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className={""}>
+          {/* Header */}
+          <DialogHeader>
+            <DialogTitle>Crear Publicación</DialogTitle>
+          </DialogHeader>
+          {/* Content */}
+          <form>
+            {/* Upload Image */}
+            <Label htmlFor="create-post-image">
+              Foto del producto/servicio 📸
+            </Label>
+            <input
+              id="create-post-image"
+              type="file"
+              accept="image/*"
+              className="hidden"
+            />
+          </form>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 };

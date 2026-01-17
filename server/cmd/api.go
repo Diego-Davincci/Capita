@@ -18,8 +18,9 @@ import (
 )
 
 type application struct {
-	config utils.Config
-	db     *pgxpool.Pool
+	config          utils.Config
+	db              *pgxpool.Pool
+	uploaderService posts.MediaService
 }
 
 func (app *application) mount() http.Handler {
@@ -34,6 +35,7 @@ func (app *application) mount() http.Handler {
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-type", "X-CSRF-Token"},
 		AllowCredentials: true,
 	}))
+
 	// Good middleware stack
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer) // Making sure we can recover from panics
@@ -45,6 +47,7 @@ func (app *application) mount() http.Handler {
 		utils.WriteResponse(w, http.StatusOK, nil, "Everything OK 🔥")
 	})
 
+	// DB access
 	repository := repo.New(app.db)
 
 	// Auth routes
@@ -65,10 +68,10 @@ func (app *application) mount() http.Handler {
 	})
 
 	// Post routes
-	postsService := posts.NewPostsService(repository)
-	postsController := posts.NewPostsController(postsService)
+	postsService := posts.NewPostsService(repository, app.config)
+	postsController := posts.NewPostsController(postsService, app.uploaderService)
 	r.Route("/posts", func(r chi.Router) {
-		r.Post("/", postsController.HandlePosts)
+		r.Post("/", postsController.HandlePost)
 	})
 
 	return r
