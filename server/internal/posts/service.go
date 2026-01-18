@@ -12,8 +12,8 @@ import (
 )
 
 type Service interface {
-	ValidatePayload(r *http.Request) (*CreatePostPayload, multipart.File, []utils.CustomValidationError, error)
-	CreatePost(ctx context.Context) error
+	ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error)
+	CreatePost(ctx context.Context) (err error)
 }
 
 type postsService struct {
@@ -28,11 +28,11 @@ func NewPostsService(repo repo.Querier, config utils.Config) Service {
 type CreatePostPayload struct {
 	Title       string                `form:"title" validate:"required,min=1,max=100"`
 	Description string                `form:"description" validate:"omitempty,max=500"`
-	Price       int64                 `form:"price" validate:"omitempty,gt=0"`
-	Media       *multipart.FileHeader `form:"media" validate:"omitempty"`
+	Price       int64                 `form:"price" validate:"required,gt=0"`
+	Media       *multipart.FileHeader `form:"media" validate:"required"`
 }
 
-func (s *postsService) ValidatePayload(r *http.Request) (*CreatePostPayload, multipart.File, []utils.CustomValidationError, error) {
+func (s *postsService) ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error) {
 	// Max of 10MG sent from the frontend
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		return &CreatePostPayload{}, nil, []utils.CustomValidationError{}, fmt.Errorf("failed to parse form data: %w", err)
@@ -64,7 +64,7 @@ func (s *postsService) ValidatePayload(r *http.Request) (*CreatePostPayload, mul
 	reqPayload.Media = fileHeader
 
 	// Validate request
-	validationErrs := utils.ValidateData(reqPayload)
+	validationErrs = utils.ValidateData(reqPayload)
 	if len(validationErrs) != 0 {
 		return &CreatePostPayload{}, nil, []utils.CustomValidationError{}, fmt.Errorf("validation errors when creating a post: %w", err)
 	}

@@ -7,13 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Search, Store } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+
+import { SellPostModal } from "./sell-post-modal";
 
 export const Navbar = () => {
   const location = useLocation();
@@ -28,8 +23,7 @@ export const Navbar = () => {
   }, []);
 
   const [open, setOpen] = useState<boolean>(false);
-
-  // TODO: sell modal, responsive navbar
+  // TODO: responsive navbar
 
   return (
     <header className="w-[95%] m-auto border sticky top-2 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e]/80 backdrop-blur-xl z-50 rounded-3xl">
@@ -91,28 +85,7 @@ export const Navbar = () => {
           </div>
         </div>
       </nav>
-      {/* Sell Modal */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className={""}>
-          {/* Header */}
-          <DialogHeader>
-            <DialogTitle>Crear Publicación</DialogTitle>
-          </DialogHeader>
-          {/* Content */}
-          <form>
-            {/* Upload Image */}
-            <Label htmlFor="create-post-image">
-              Foto del producto/servicio 📸
-            </Label>
-            <input
-              id="create-post-image"
-              type="file"
-              accept="image/*"
-              className="hidden"
-            />
-          </form>
-        </DialogContent>
-      </Dialog>
+      <SellPostModal open={open} setOpen={setOpen} />
     </header>
   );
 };
