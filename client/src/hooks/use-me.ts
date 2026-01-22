@@ -10,6 +10,7 @@ export const useMe = () => {
         1. HTTP returns status code 401 (error gets returned)
         2. HTTP returns status code 5xx (error gets returned)
         3. HTTP return status code 200 (user data gets save in zustand)
+        4. Check if route is "/login?err" in case it is, do not run the request
     */
 
   const [error, setError] = useState<ApiError | undefined>(undefined);

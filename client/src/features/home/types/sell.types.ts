@@ -10,7 +10,10 @@ export const sellPostSchema = z.object({
     .optional(),
   price: z.number().min(1, { error: "El precio es obligatorio" }),
   category: z.string().min(1, { error: "La categoría es obligatoria" }),
-  media: z.file({ error: "La foto es obligatoria" }),
+  media: z
+    .any()
+    .refine((file) => file instanceof File, "La foto es obligatoria")
+    .refine((file) => file && file.size > 0, "La foto es obligatoria"),
 });
 
 export type SellPost = z.infer<typeof sellPostSchema>;

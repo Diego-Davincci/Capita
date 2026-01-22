@@ -3,9 +3,11 @@ package auth
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
 	"github.com/Diego-Davincci/Capita/internal/utils"
@@ -16,6 +18,7 @@ import (
 type Service interface {
 	RedirectToGoogleUrl() string
 	GetGoogleUserData(ctx context.Context, googleCode string) (userData googleUser, err error)
+	CheckUserEmail(email string) (err error)
 	UpsertUser(ctx context.Context, userData googleUser) (user repo.User, err error)
 	SetAuthCookies(w http.ResponseWriter, userID int64) (err error)
 	GetUser(ctx context.Context, userID int64) (user repo.GetUserByIDRow, err error)
@@ -75,6 +78,18 @@ func (s *authService) GetGoogleUserData(ctx context.Context, googleCode string) 
 	// fmt.Printf("%#v\n", v)
 
 	return v, nil
+}
+
+func (s *authService) CheckUserEmail(email string) (err error) {
+
+	schoolDomain := "@unal.edu.co"
+	validEmail := strings.Contains(email, schoolDomain)
+	if !validEmail {
+		err = errors.New("user has an email outisde the school")
+		return
+	}
+
+	return nil
 }
 
 func (s *authService) UpsertUser(ctx context.Context, userData googleUser) (user repo.User, err error) {

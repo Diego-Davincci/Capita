@@ -25,28 +25,37 @@ func (c *authController) GoogleOauth(w http.ResponseWriter, r *http.Request) {
 func (c *authController) GoogleOauthCallback(w http.ResponseWriter, r *http.Request) {
 	googleCode := r.URL.Query().Get("code")
 
+	errRedirectURL := fmt.Sprintf("%s/login?err='problem with google login'", c.config.Website)
+
 	// Get google user data using oauth2
 	googleUser, err := c.service.GetGoogleUserData(r.Context(), googleCode)
 	if err != nil {
 		log.Println(err)
-		http.Redirect(w, r, fmt.Sprintf("%s/login?err='problem with google login'", c.config.Website), http.StatusSeeOther)
+		http.Redirect(w, r, errRedirectURL, http.StatusSeeOther)
 		return
 	}
 
-	// TODO: validate only people with email from my school
+	// Validate user email belongs to school
+	err = c.service.CheckUserEmail(googleUser.Email)
+	if err != nil {
+		log.Println(err)
+		log.Println(c.config.Website)
+		http.Redirect(w, r, errRedirectURL, http.StatusSeeOther)
+		return
+	}
 
 	// Create/Update user
 	user, err := c.service.UpsertUser(r.Context(), googleUser)
 	if err != nil {
 		log.Println(err)
-		http.Redirect(w, r, fmt.Sprintf("%s/login?err='problem with google login'", c.config.Website), http.StatusSeeOther)
+		http.Redirect(w, r, errRedirectURL, http.StatusSeeOther)
 		return
 	}
 
 	// Create access and refresh tokens and set cookies
 	if err = c.service.SetAuthCookies(w, user.UserID); err != nil {
 		log.Println(err)
-		http.Redirect(w, r, fmt.Sprintf("%s/login?err='problem with google login'", c.config.Website), http.StatusSeeOther)
+		http.Redirect(w, r, errRedirectURL, http.StatusSeeOther)
 		return
 	}
 

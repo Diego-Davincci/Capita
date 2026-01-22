@@ -1,7 +1,6 @@
 package posts
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -19,7 +18,7 @@ func NewPostsController(service Service, uploaderService MediaService) *postsCon
 
 func (c *postsController) HandlePost(w http.ResponseWriter, r *http.Request) {
 
-	// ctx := r.Context()
+	ctx := r.Context()
 
 	// Validate payload
 	payload, file, validationErrs, err := c.service.ValidatePayload(r)
@@ -32,10 +31,17 @@ func (c *postsController) HandlePost(w http.ResponseWriter, r *http.Request) {
 		utils.WriteResponse(w, http.StatusBadRequest, validationErrs, utils.ErrBadRequest.Error())
 		return
 	}
-	fmt.Printf("%#v\n", payload)
-	fmt.Printf("%#v\n", file)
+	// fmt.Printf("%#v\n", payload)
+	// fmt.Printf("%#v\n", file)
 
+	// TODO: make sure media file is either PNG/JPG/JPEG
 	// Save media files to bucket
+	_, err = c.uploaderService.UploadMedia(ctx, file, payload.Media.Filename)
+	if err != nil {
+		log.Println(err)
+		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
+		return
+	}
 
 	// Create post
 

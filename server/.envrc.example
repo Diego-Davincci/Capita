@@ -1,0 +1,4 @@
+# Goose Config
+export GOOSE_DRIVER=postgres
+export GOOSE_DBSTRING=postgres://admin:root@localhost:5432/capita?sslmode=disable
+export GOOSE_MIGRATION_DIR=./internal/db/migrations

@@ -32,6 +32,9 @@ declare module "@tanstack/react-router" {
 function App() {
   const { loading, error } = useMe();
 
+  // If we detect a ?err query in the URL, that means google login failed for the user
+  const isLoginErr = window.location.href.includes("/login?err");
+
   if (loading) {
     return (
       <main className="min-h-screen w-full flex items-center justify-center bg-linear-to-b from-[#1a0b2e] to-[#2d1b4e]">
@@ -85,7 +88,7 @@ function App() {
         <RouterProvider
           router={router}
           context={{
-            isAuthorized: !error ? true : false,
+            isAuthorized: isLoginErr ? false : !error ? true : false,
           }}
         />
       </ReactQueryWrapper>

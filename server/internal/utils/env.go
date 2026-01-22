@@ -22,9 +22,10 @@ type Config struct {
 	Domain             string        `mapstructure:"DOMAIN"`
 
 	// S3
-	BucketName string `mapstructure:"BUCKET_NAME"`
-	S3Region   string `mapstructure:"S3_REGION"`
-	UploadDir  string `mapstructure:"UPLOAD_DIR"`
+	BucketName            string `mapstructure:"BUCKET_NAME"`
+	AWS_REGION            string `mapstructure:"AWS_REGION"`
+	AWS_ACCESS_KEY_ID     string `mapstructure:"AWS_ACCESS_KEY_ID"`
+	AWS_SECRET_ACCESS_KEY string `mapstructure:"AWS_SECRET_ACCESS_KEY"`
 }
 
 // LoadConfig reads configuration from environment variables

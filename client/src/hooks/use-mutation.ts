@@ -59,16 +59,18 @@ import { toast } from "sonner";
  */
 export const useApiMutation = <
   Payload = Object | null | undefined,
-  Response = Object | null,
+  Response = Object | null
 >({
   url,
   method,
+  formData = false,
   onSuccessFn,
   invalidateQueries,
   updateCache,
 }: {
   url: string;
   method: "DELETE" | "POST" | "UPDATE";
+  formData?: boolean;
   onSuccessFn?: (
     data: Response,
     variables: { payload: Payload },
@@ -88,7 +90,12 @@ export const useApiMutation = <
 
   return useMutation<Response, ApiError, { payload: Payload }>({
     mutationFn: async ({ payload }) =>
-      await mutationHttpRequest<Payload, Response>({ method, url, payload }),
+      await mutationHttpRequest<Payload, Response>({
+        method,
+        url,
+        payload,
+        formData,
+      }),
     onSuccess: (data, variables, context) => {
       // Update cache from another queries if requested
       if (updateCache) {

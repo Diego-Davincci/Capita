@@ -32,6 +32,7 @@ import {
   type FormFieldValidation,
   findFieldError,
 } from "@/lib/utils";
+import { useSellPost } from "../hooks/use-sell-post";
 
 type Props = {
   open: boolean;
@@ -43,7 +44,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
     title: "",
     description: "",
     category: "",
-    media: new File([], ""),
+    media: undefined,
     price: 0,
   });
 
@@ -60,6 +61,10 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
       setSellPost({ ...sellPost, media: file });
     }
   };
+  const handleRemoveImageSelected = () => {
+    setImagePreview(null);
+    setSellPost({ ...sellPost, media: undefined });
+  };
 
   const [displayPrice, setDisplayPrice] = useState<string>("");
   const handlePrice = (e: ChangeEvent<HTMLInputElement>) => {
@@ -74,21 +79,57 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
     );
 
     setDisplayPrice(formattedPrice);
-    setSellPost({ ...sellPost, price: Number(formattedPrice) });
+    setSellPost({
+      ...sellPost,
+      price: Number(formattedPrice.replaceAll(",", "")),
+    });
   };
 
   const [sellPostErrs, setSellPostErrs] = useState<FormFieldValidation[]>([]);
+  const { data, isPending, mutateSellPost } = useSellPost({
+    payload: sellPost,
+  });
   const handleSellPostSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const errors = validateFields(sellPostSchema, sellPost);
     setSellPostErrs(errors);
+
+    if (errors.length === 0) {
+      mutateSellPost();
+    }
   };
 
-  console.log(sellPostErrs);
+  /*
+    TODO
+    QA Test
+    1 - data validation
+    2 - when closing window, all data comes back to empty, including display price + image preview + validation errors
+
+    3 - loading state
+    3 - successfull http call
+    4 - http call error
+
+    TODO: only allow JPG/JPEG/PNG/GIF
+  */
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={() => {
+        setOpen(false);
+        setSellPost({
+          title: "",
+          description: "",
+          category: "",
+          price: 0,
+          media: undefined,
+        });
+        setDisplayPrice("");
+        setImagePreview(null);
+        setSellPostErrs([]);
+      }}
+    >
       <DialogContent
         className={
           "max-w-lg! border border-border max-h-[90vh] overflow-hidden overflow-y-scroll"
@@ -107,41 +148,48 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
             <Label htmlFor="create-post-image">
               Foto del producto/servicio 📸
             </Label>
-            {imagePreview ? (
-              <div className="w-full h-80 rounded-2xl overflow-hidden relative">
-                <img
-                  src={imagePreview}
-                  className="object-cover w-full h-full"
-                />
-                <Button
-                  variant={"secondary"}
-                  size={"icon"}
-                  className={"absolute top-2 right-2 cursor-pointer"}
-                  onClick={() => setImagePreview(null)}
+            <div className="space-y-0.5">
+              {imagePreview ? (
+                <div className="w-full h-80 rounded-2xl overflow-hidden relative">
+                  <img
+                    src={imagePreview}
+                    className="object-cover w-full h-full"
+                  />
+                  <Button
+                    variant={"secondary"}
+                    size={"icon"}
+                    className={"absolute top-2 right-2 cursor-pointer"}
+                    onClick={handleRemoveImageSelected}
+                  >
+                    <X />
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="w-full h-80 flex flex-col items-center justify-center border-dashed border-2 rounded-2xl border-primary/40 hover:border-primary transition-all fade-out text-muted-foreground hover:text-white"
+                  onClick={() => {
+                    uploadImgRef.current?.click();
+                  }}
                 >
-                  <X />
-                </Button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="w-full h-80 flex flex-col items-center justify-center border-dashed border-2 rounded-2xl border-primary/40 hover:border-primary transition-all fade-out text-muted-foreground hover:text-white"
-                onClick={() => {
-                  uploadImgRef.current?.click();
-                }}
-              >
-                <Camera />
-                Subir Foto
-              </button>
-            )}
-            <input
-              id="create-post-image"
-              ref={uploadImgRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => handleImageChange(e)}
-            />
+                  <Camera />
+                  Subir Foto
+                </button>
+              )}
+              <input
+                id="create-post-image"
+                ref={uploadImgRef}
+                type="file"
+                accept="image/png, image/jpg, image/jpeg, image/gif"
+                className="hidden"
+                onChange={(e) => handleImageChange(e)}
+              />
+              {findFieldError("media", sellPostErrs) && (
+                <span className="text-xs text-destructive">
+                  {findFieldError("media", sellPostErrs)!.message}
+                </span>
+              )}
+            </div>
           </div>
           {/* Title */}
           <div className="space-y-4">

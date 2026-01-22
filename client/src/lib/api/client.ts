@@ -81,26 +81,44 @@ export const getHttpRequest = async <Response>(
  *
  * @param {Object} params - Mutation fn params.
  * @param {Object | undefined} params.payload - Payload requested by backend
+ * @param {boolean | undefined} params.formData - Identify wether we will send JSON or FormData
  * @param {string} params.url - Backend URL
  * @param {string} params.method - HTTP method to execute (only for mutations)
  *
  */
 export const mutationHttpRequest = async <Payload, Response>({
   payload,
+  formData = false,
   url,
   method,
 }: {
   payload?: Payload;
+  formData?: boolean;
   url: string;
   method: "DELETE" | "POST" | "UPDATE";
 }): Promise<Response> => {
   try {
+    const formPayload = payload as FormData;
+
     const req = await fetch(url, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: payload ? JSON.stringify(payload) : undefined,
+      headers:
+        payload && !formData
+          ? {
+              "Content-Type": "application/json",
+            }
+          : undefined,
+      /*
+          1 - If payload is provided, but formData is not, we're sending JSON
+          2 - If payload is provided and formData is true, we're sending Form Data
+          3 - default case, undefined, we're not sending anything
+      */
+      body:
+        payload && !formData
+          ? JSON.stringify(payload)
+          : payload && formData
+          ? formPayload
+          : undefined,
       credentials: "include",
     });
 

@@ -27,30 +27,34 @@ func NewPostsService(repo repo.Querier, config utils.Config) Service {
 
 type CreatePostPayload struct {
 	Title       string                `form:"title" validate:"required,min=1,max=100"`
-	Description string                `form:"description" validate:"omitempty,max=500"`
+	Description string                `form:"description" validate:"omitempty,max=400"`
 	Price       int64                 `form:"price" validate:"required,gt=0"`
+	Category    string                `form:"category" validate:"required,min=1"`
 	Media       *multipart.FileHeader `form:"media" validate:"required"`
 }
 
 func (s *postsService) ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error) {
 	// Max of 10MG sent from the frontend
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		return &CreatePostPayload{}, nil, []utils.CustomValidationError{}, fmt.Errorf("failed to parse form data: %w", err)
+	if parseErr := r.ParseMultipartForm(10 << 20); parseErr != nil {
+		err = fmt.Errorf("failed to parse form data: %w", parseErr)
+		return
 	}
 
 	// Extract fields
 	var price int64 = 0
 	priceFormValue := r.FormValue("price")
 	if priceFormValue != "" {
-		priceInt64, err := strconv.ParseInt(priceFormValue, 10, 64)
-		if err != nil {
-			return &CreatePostPayload{}, nil, []utils.CustomValidationError{}, fmt.Errorf("failed to convert price property to int64: %w", err)
+		priceInt64, parsePriceErr := strconv.ParseInt(priceFormValue, 10, 64)
+		if parsePriceErr != nil {
+			err = fmt.Errorf("failed to convert price property to int64: %w", parsePriceErr)
+			return
 		}
 		price = priceInt64
 	}
-	reqPayload := &CreatePostPayload{
+	payload = &CreatePostPayload{
 		Title:       r.FormValue("title"),
-		Description: r.FormValue("descriptions"),
+		Description: r.FormValue("description"),
+		Category:    r.FormValue("category"),
 		Price:       price,
 		Media:       nil,
 	}
@@ -61,15 +65,15 @@ func (s *postsService) ValidatePayload(r *http.Request) (payload *CreatePostPayl
 		return &CreatePostPayload{}, nil, []utils.CustomValidationError{}, fmt.Errorf("failed to get media property from req: %w", err)
 	}
 	defer file.Close()
-	reqPayload.Media = fileHeader
+	payload.Media = fileHeader
 
 	// Validate request
-	validationErrs = utils.ValidateData(reqPayload)
-	if len(validationErrs) != 0 {
-		return &CreatePostPayload{}, nil, []utils.CustomValidationError{}, fmt.Errorf("validation errors when creating a post: %w", err)
+	validationErrs = utils.ValidateData(payload)
+	if len(validationErrs) > 0 {
+		return &CreatePostPayload{}, nil, validationErrs, nil
 	}
 
-	return reqPayload, file, []utils.CustomValidationError{}, nil
+	return
 }
 
 func (s *postsService) CreatePost(ctx context.Context) error {

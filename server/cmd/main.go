@@ -30,7 +30,7 @@ func main() {
 	log.Println("DB connected successfully")
 
 	// S3 setup
-	uploaderService, err := posts.NewMediaUploaderService(apiConfig.BucketName, apiConfig.S3Region)
+	uploaderService, err := posts.NewMediaUploaderService(apiConfig.BucketName, apiConfig.AWS_REGION, apiConfig.AWS_ACCESS_KEY_ID, apiConfig.AWS_SECRET_ACCESS_KEY)
 	if err != nil {
 		log.Panic(err)
 	}
