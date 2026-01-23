@@ -19,24 +19,23 @@ func NewPostsController(service Service, uploaderService MediaService) *postsCon
 func (c *postsController) HandlePost(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
+	userID := ctx.Value(utils.UserContextKey).(int64)
 
 	// Validate payload
-	payload, file, validationErrs, err := c.service.ValidatePayload(r)
+	payload, mediaFile, validationErrs, err := c.service.ValidatePayload(r)
 	if err != nil {
 		log.Println(err)
 		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
 		return
 	}
 	if len(validationErrs) > 0 {
+		log.Printf("validation errors when creating a post %+v", validationErrs)
 		utils.WriteResponse(w, http.StatusBadRequest, validationErrs, utils.ErrBadRequest.Error())
 		return
 	}
-	// fmt.Printf("%#v\n", payload)
-	// fmt.Printf("%#v\n", file)
 
-	// TODO: make sure media file is either PNG/JPG/JPEG
 	// Save media files to bucket
-	_, err = c.uploaderService.UploadMedia(ctx, file, payload.Media.Filename)
+	fileUrl, err := c.uploaderService.UploadMedia(ctx, mediaFile, *payload.Media)
 	if err != nil {
 		log.Println(err)
 		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
@@ -44,6 +43,26 @@ func (c *postsController) HandlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create post
+	err = c.service.CreatePost(ctx, userID, fileUrl, *payload)
+	if err != nil {
+		log.Println(err)
+		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
+		return
+	}
 
 	utils.WriteResponse(w, http.StatusCreated, nil, "")
+}
+
+func (c *postsController) GetAllPosts(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	posts, err := c.service.GetPosts(ctx, "")
+	if err != nil {
+		log.Println(err)
+		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
+		return
+	}
+
+	utils.WriteResponse(w, http.StatusAccepted, posts, "")
 }

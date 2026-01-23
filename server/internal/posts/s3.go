@@ -3,7 +3,7 @@ package posts
 import (
 	"context"
 	"fmt"
-	"io"
+	"mime/multipart"
 	"path/filepath"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -14,7 +14,7 @@ import (
 )
 
 type MediaService interface {
-	UploadMedia(ctx context.Context, file io.Reader, originalFilename string) (fileUrl string, err error)
+	UploadMedia(ctx context.Context, mediaFile multipart.File, mediaFileHeaders multipart.FileHeader) (fileUrl string, err error)
 }
 
 type MediaUploaderService struct {
@@ -42,16 +42,24 @@ func NewMediaUploaderService(bucketName, region, accessKey, secretKey string) (M
 	}, nil
 }
 
-func (s *MediaUploaderService) UploadMedia(ctx context.Context, file io.Reader, originalFilename string) (fileUrl string, err error) {
+func (s *MediaUploaderService) UploadMedia(ctx context.Context, mediaFile multipart.File, mediaFileHeaders multipart.FileHeader) (fileUrl string, err error) {
+
+	defer mediaFile.Close() // Close the temporary file to free-up system memory after making sure it's saved on s3
+
 	// Generate unique filename
-	ext := filepath.Ext(originalFilename)
+	ext := filepath.Ext(mediaFileHeaders.Filename)
 	filename := fmt.Sprintf("posts/%s%s", uuid.New().String(), ext)
+
+	contentLength := aws.Int64(mediaFileHeaders.Size)
+	contentType := mediaFileHeaders.Header.Get("Content-Type")
 
 	// Upload to S3
 	_, uploadErr := s.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket: aws.String(s.bucketName),
-		Key:    aws.String(filename),
-		Body:   file,
+		Bucket:        aws.String(s.bucketName),
+		Key:           aws.String(filename),
+		Body:          mediaFile,
+		ContentLength: contentLength,
+		ContentType:   &contentType,
 	})
 	if uploadErr != nil {
 		err = fmt.Errorf("couldn't upload media file to s3: %w", uploadErr)

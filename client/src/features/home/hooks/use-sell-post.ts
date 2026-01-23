@@ -5,13 +5,20 @@ import { API_URL } from "@/lib/utils";
 
 type Props = {
   payload: SellPost;
+  onSuccess: () => void;
 };
 
-export const useSellPost = ({ payload }: Props) => {
-  const { data, isPending, mutate } = useApiMutation<FormData, ApiRsp<any>>({
+export const useSellPost = ({ payload, onSuccess }: Props) => {
+  const { data, isPending, mutate } = useApiMutation<
+    FormData,
+    ApiRsp<undefined>
+  >({
     method: "POST",
     url: `${API_URL}/posts`,
     formData: true,
+    onSuccessFn: () => {
+      onSuccess();
+    },
   });
 
   const mutateSellPost = () => {

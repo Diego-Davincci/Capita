@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
-import { Camera, X } from "lucide-react";
+import { Camera, Loader2, X } from "lucide-react";
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 
 import {
@@ -33,6 +33,7 @@ import {
   findFieldError,
 } from "@/lib/utils";
 import { useSellPost } from "../hooks/use-sell-post";
+import { toast } from "sonner";
 
 type Props = {
   open: boolean;
@@ -40,6 +41,7 @@ type Props = {
 };
 
 export const SellPostModal = ({ open, setOpen }: Props) => {
+  // Form state
   const [sellPost, setSellPost] = useState<SellPost>({
     title: "",
     description: "",
@@ -47,7 +49,9 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
     media: undefined,
     price: 0,
   });
+  const [sellPostErrs, setSellPostErrs] = useState<FormFieldValidation[]>([]);
 
+  // Image input
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const uploadImgRef = useRef<HTMLInputElement>(null);
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -66,6 +70,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
     setSellPost({ ...sellPost, media: undefined });
   };
 
+  // Price input
   const [displayPrice, setDisplayPrice] = useState<string>("");
   const handlePrice = (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
@@ -85,9 +90,32 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
     });
   };
 
-  const [sellPostErrs, setSellPostErrs] = useState<FormFieldValidation[]>([]);
+  // Submit post form
+  const clearModalData = () => {
+    setOpen(false);
+    setSellPost({
+      title: "",
+      description: "",
+      category: "",
+      price: 0,
+      media: undefined,
+    });
+    setDisplayPrice("");
+    setImagePreview(null);
+    setSellPostErrs([]);
+  };
+
+  const onSuccess = () => {
+    // Notification for confirmation
+    toast.success("Publicación creada exitosamente 🔥", {
+      position: "top-center",
+    });
+    // Clear modal data
+    clearModalData();
+  };
   const { data, isPending, mutateSellPost } = useSellPost({
     payload: sellPost,
+    onSuccess,
   });
   const handleSellPostSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -101,34 +129,25 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
   };
 
   /*
-    TODO
     QA Test
-    1 - data validation
-    2 - when closing window, all data comes back to empty, including display price + image preview + validation errors
+    1 - data validation ✅
+    2 - when closing window, all data comes back to empty, including display price + image preview + validation errors ✅
 
-    3 - loading state
-    3 - successfull http call
-    4 - http call error
-
-    TODO: only allow JPG/JPEG/PNG/GIF
+    3 - loading state (can't close the window, can't modify media file input, title, description, price, category, loading button is not clickable and has animation) ✅
+    4 - successfull http call (show notification, clear modal data, close modal)  ✅
+    5 - http call error ✅
   */
 
   return (
     <Dialog
       open={open}
       onOpenChange={() => {
-        setOpen(false);
-        setSellPost({
-          title: "",
-          description: "",
-          category: "",
-          price: 0,
-          media: undefined,
-        });
-        setDisplayPrice("");
-        setImagePreview(null);
-        setSellPostErrs([]);
+        // If request is not pending, we can close the modal
+        if (!isPending) {
+          clearModalData();
+        }
       }}
+      disablePointerDismissal={isPending}
     >
       <DialogContent
         className={
@@ -159,6 +178,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
                     variant={"secondary"}
                     size={"icon"}
                     className={"absolute top-2 right-2 cursor-pointer"}
+                    disabled={isPending}
                     onClick={handleRemoveImageSelected}
                   >
                     <X />
@@ -171,6 +191,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
                   onClick={() => {
                     uploadImgRef.current?.click();
                   }}
+                  disabled={isPending}
                 >
                   <Camera />
                   Subir Foto
@@ -180,9 +201,10 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
                 id="create-post-image"
                 ref={uploadImgRef}
                 type="file"
-                accept="image/png, image/jpg, image/jpeg, image/gif"
+                accept="image/png, image/jpg, image/jpeg"
                 className="hidden"
                 onChange={(e) => handleImageChange(e)}
+                disabled={isPending}
               />
               {findFieldError("media", sellPostErrs) && (
                 <span className="text-xs text-destructive">
@@ -204,6 +226,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
                 onChange={(e) =>
                   setSellPost({ ...sellPost, title: e.target.value })
                 }
+                disabled={isPending}
               />
               {findFieldError("title", sellPostErrs) && (
                 <span className="text-xs text-destructive">
@@ -223,6 +246,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
               onChange={(e) =>
                 setSellPost({ ...sellPost, description: e.target.value })
               }
+              disabled={isPending}
             />
           </div>
           {/* Price */}
@@ -240,6 +264,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
                   placeholder="50.000"
                   value={displayPrice}
                   onChange={handlePrice}
+                  disabled={isPending}
                 />
               </InputGroup>
               {findFieldError("price", sellPostErrs) && (
@@ -259,6 +284,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
                 onValueChange={(v) => {
                   if (v) setSellPost({ ...sellPost, category: v });
                 }}
+                disabled={isPending}
               >
                 <SelectTrigger className={"w-full"}>
                   <SelectValue>
@@ -282,8 +308,19 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
               )}
             </div>
           </div>
-          <Button type="submit" className={"cursor-pointer w-full"}>
-            Publicar
+          <Button
+            type="submit"
+            className={"cursor-pointer w-full"}
+            disabled={isPending}
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="animate-spin" />
+                Creando la Publi
+              </>
+            ) : (
+              "Publicar"
+            )}
           </Button>
         </form>
       </DialogContent>

@@ -1,8 +1,20 @@
 package utils
 
-import "github.com/go-playground/validator/v10"
+import (
+	"mime/multipart"
+	"path/filepath"
+	"reflect"
+	"strings"
+
+	"github.com/go-playground/validator/v10"
+)
 
 var validate = validator.New()
+
+// Initialize validator and register custom validation functions
+func init() {
+	validate.RegisterValidation("imagefile", validateImageFileType)
+}
 
 type CustomValidationError struct {
 	Field   string `json:"field"`
@@ -22,10 +34,13 @@ func msgForTag(fe validator.FieldError) string {
 		return "El valor del campo no existe dentro de las opciones"
 	case "gt":
 		return "El valor del campo debe ser más grande"
+	case "imagefile":
+		return "El archivo debe ser una imagen (JPG, JPEG, PNG)"
 	}
 	return fe.Error() // default error
 }
 
+// ValidateData validates user payload and make sure it follows all the requirements
 func ValidateData(reqPayload interface{}) []CustomValidationError {
 	err := validate.Struct(reqPayload)
 	if err != nil {
@@ -40,4 +55,40 @@ func ValidateData(reqPayload interface{}) []CustomValidationError {
 		return customErrors
 	}
 	return nil
+}
+
+// validateImageFileType validates that the uploaded file is an image (JPG, JPEG, PNG)
+func validateImageFileType(fl validator.FieldLevel) bool {
+	// Handle pointer to multipart.FileHeader
+	field := fl.Field()
+	if field.Kind() == reflect.Ptr {
+		if field.IsNil() {
+			return false
+		}
+		field = field.Elem()
+	}
+
+	// Convert to multipart.FileHeader
+	fileHeader, ok := field.Interface().(multipart.FileHeader)
+	if !ok {
+		return false
+	}
+
+	// Extract file extension from filename
+	filename := fileHeader.Filename
+	if filename == "" {
+		return false
+	}
+
+	// Convert to lowercase for case-insensitive comparison
+	ext := strings.ToLower(filepath.Ext(filename))
+
+	// Allowed image extensions
+	allowedExts := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+	}
+
+	return allowedExts[ext]
 }

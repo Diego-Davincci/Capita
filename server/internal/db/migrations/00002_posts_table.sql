@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE "posts" (
   "post_id" bigserial PRIMARY KEY,
-  "user_id" bigint,
+  "user_id" bigint NOT NULL,
   "title" varchar(100) NOT NULL,
   "description" varchar(400),
   "price" bigint NOT NULL,

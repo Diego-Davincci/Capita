@@ -71,7 +71,8 @@ func (app *application) mount() http.Handler {
 	postsService := posts.NewPostsService(repository, app.config)
 	postsController := posts.NewPostsController(postsService, app.uploaderService)
 	r.Route("/posts", func(r chi.Router) {
-		r.Post("/", postsController.HandlePost)
+		r.With(authMiddleware.Auth).Post("/", postsController.HandlePost)
+		r.With(authMiddleware.Auth).Get("/", postsController.GetAllPosts)
 	})
 
 	return r

@@ -2,25 +2,16 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+import type { Posts } from "@/features/home/types";
+import { homeCategories } from "@/features/home/utils";
+import { useGetQuery } from "@/hooks";
+import { API_URL, cn } from "@/lib/utils";
 import {
   createFileRoute,
   useNavigate,
   useSearch,
 } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  Gem,
-  Handbag,
-  Heart,
-  House,
-  Shirt,
-  ShoppingBag,
-  Smartphone,
-  Sparkles,
-  Store,
-  TvMinimal,
-} from "lucide-react";
+import { ArrowRight, Heart, ShoppingBag, Store, TvMinimal } from "lucide-react";
 
 type HomeParams = {
   category?: string;
@@ -39,89 +30,43 @@ function RouteComponent() {
   const { category } = useSearch({ from: "/_authenticated/_layout/" });
   const navigate = useNavigate();
 
+  const { data, isLoading } = useGetQuery<Posts>({
+    queryKey: [`feed-category-${category}`],
+    url: `${API_URL}/posts`,
+  });
+
+  console.log(data, isLoading);
+
   const postOwner = "Marco poloccinni";
 
-  // TODO: we need to finish this
+  /* TODO: Finish responsive + design + make HTTP call for posts
+  QA Tests:
+  */
 
   return (
-    <section className="w-[90%] m-auto pb-10">
+    <section className="w-[90%] m-auto pb-10 overflow-hidden max-w-7xl">
       {/* Categories */}
-      <div className="w-full mt-10 flex gap-x-2">
-        <Button
-          size={"lg"}
-          variant={"outline"}
-          className={cn(
-            "cursor-pointer hover:scale-105 hover:text-violet-400 transition-all hover:border hover:border-primary/70 px-5 hover:bg-input/40",
-            {
-              "text-violet-400 border-primary hover:text-violet-400 hover:border-primary hover:bg-input/30":
-                category && category === "todo",
+      <div className="w-full mt-10 flex gap-x-2 flex-wrap gap-y-2 justify-center sm:justify-start">
+        {homeCategories.map(({ name, Icon }) => (
+          <Button
+            key={name}
+            size={"lg"}
+            variant={"outline"}
+            className={cn(
+              "cursor-pointer hover:scale-105 hover:text-violet-400 transition-all hover:border hover:border-primary/70 px-5 hover:bg-input/40",
+              {
+                "text-violet-400 border-primary hover:text-violet-400 hover:border-primary hover:bg-input/30":
+                  category && category === name.toLowerCase(),
+              }
+            )}
+            onClick={() =>
+              navigate({ to: "/", search: { category: name.toLowerCase() } })
             }
-          )}
-          onClick={() => navigate({ to: "/", search: { category: "todo" } })}
-        >
-          <Sparkles />
-          Todo
-        </Button>
-        <Button
-          size={"lg"}
-          variant={"outline"}
-          className={
-            "cursor-pointer hover:scale-105 hover:text-primary transition-all hover:border hover:border-primary/70 px-5 hover:bg-input/40"
-          }
-        >
-          <TvMinimal />
-          Streaming
-        </Button>
-        <Button
-          size={"lg"}
-          variant={"outline"}
-          className={
-            "cursor-pointer hover:scale-105 hover:text-primary transition-all hover:border hover:border-primary/70 px-5 hover:bg-input/40"
-          }
-        >
-          <Smartphone />
-          Electrónicos
-        </Button>
-        <Button
-          size={"lg"}
-          variant={"outline"}
-          className={
-            "cursor-pointer hover:scale-105 hover:text-primary transition-all hover:border hover:border-primary/70 px-5 hover:bg-input/40"
-          }
-        >
-          <Shirt />
-          Ropa
-        </Button>
-        <Button
-          size={"lg"}
-          variant={"outline"}
-          className={
-            "cursor-pointer hover:scale-105 hover:text-primary transition-all hover:border hover:border-primary/70 px-5 hover:bg-input/40"
-          }
-        >
-          <Gem />
-          Accesorios
-        </Button>
-        <Button
-          size={"lg"}
-          variant={"outline"}
-          className={
-            "cursor-pointer hover:scale-105 hover:text-primary transition-all hover:border hover:border-primary/70 px-5 hover:bg-input/40"
-          }
-        >
-          <House />
-          Casa
-        </Button>
-        <Button
-          size={"lg"}
-          variant={"outline"}
-          className={
-            "cursor-pointer hover:scale-105 hover:text-primary transition-all hover:border hover:border-primary/70 px-5 hover:bg-input/40"
-          }
-        >
-          <Handbag />
-          Otros
-        </Button>
+          >
+            <Icon />
+            {name}
+          </Button>
+        ))}
       </div>
       {/* Feed */}
       <div className="w-full mt-10 flex flex-col">

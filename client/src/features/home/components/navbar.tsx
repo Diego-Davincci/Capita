@@ -26,9 +26,9 @@ export const Navbar = () => {
   // TODO: responsive navbar
 
   return (
-    <header className="w-[95%] m-auto border sticky top-2 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e]/80 backdrop-blur-xl z-50 rounded-3xl">
+    <header className="w-[95%] m-auto border sticky top-2 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e]/80 backdrop-blur-xl z-50 rounded-3xl max-w-7xl">
       {/* Main Navigation */}
-      <nav className="w-full h-full flex py-4 sm:px-10 px-5 justify-between items-center max-w-7xl m-auto">
+      <nav className="w-full h-full flex py-4 sm:px-10 px-5 justify-between items-center m-auto gap-x-5">
         {/* Left */}
         <div
           className="flex items-center justify-center gap-x-2 cursor-pointer"
@@ -72,7 +72,8 @@ export const Navbar = () => {
             }
             onClick={() => setOpen(true)}
           >
-            🤑 Vender
+            🤑
+            <span className="hidden lg:block">Vender</span>
           </Button>
 
           <div onClick={() => navigate({ to: "/profile" })}>

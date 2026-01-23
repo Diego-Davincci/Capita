@@ -8,11 +8,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-// primary key is composed by user_id and social_id, both of those properties are unique
+type Post struct {
+	PostID       int64              `json:"post_id"`
+	UserID       int64              `json:"user_id"`
+	Title        string             `json:"title"`
+	Description  pgtype.Text        `json:"description"`
+	Price        int64              `json:"price"`
+	Category     string             `json:"category"`
+	PhotoUrl     string             `json:"photo_url"`
+	RegisteredAt pgtype.Timestamptz `json:"registered_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
+// social_id and email must be unique
 type User struct {
 	UserID int64 `json:"user_id"`
 	// this field is for the unique id provided by google to identify a user
-	SocialID     string             `json:"social_id"`
+	SocialID     pgtype.Text        `json:"social_id"`
 	Email        string             `json:"email"`
 	Username     string             `json:"username"`
 	Picture      string             `json:"picture"`

@@ -1,1 +1,1 @@
-export * from "./sell.types";
+export * from "./sell.post.types";

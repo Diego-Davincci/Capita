@@ -6,12 +6,16 @@ package repo
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
+	CreatePost(ctx context.Context, arg CreatePostParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	GetPosts(ctx context.Context) ([]GetPostsRow, error)
 	GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow, error)
-	GetUserBySocialID(ctx context.Context, socialID string) (User, error)
+	GetUserBySocialID(ctx context.Context, socialID pgtype.Text) (User, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 

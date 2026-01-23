@@ -1,12 +1,14 @@
 /*
     React query configuration to handle API requests
 */
+import { Button } from "@/components/ui/button";
 import {
   QueryCache,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { RefreshCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 
@@ -45,10 +47,16 @@ const queryClient = new QueryClient({
         toast.error(error.name, {
           description: error.message,
           duration: 1000000, // Crazy time to simulate infinity
-          action: {
-            label: "Refresh",
-            onClick: () => window.location.reload(),
-          },
+          action: (
+            <Button
+              className={"ml-2 cursor-pointer"}
+              variant={"destructive"}
+              size={"icon-sm"}
+              onClick={() => window.location.reload()}
+            >
+              <RefreshCcw />
+            </Button>
+          ),
           position: "top-center",
         });
       }

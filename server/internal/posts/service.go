@@ -9,11 +9,13 @@ import (
 
 	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
 	"github.com/Diego-Davincci/Capita/internal/utils"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Service interface {
 	ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error)
-	CreatePost(ctx context.Context) (err error)
+	CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (err error)
+	GetPosts(ctx context.Context, categoryParam string) (posts []repo.GetPostsRow, err error)
 }
 
 type postsService struct {
@@ -30,7 +32,7 @@ type CreatePostPayload struct {
 	Description string                `form:"description" validate:"omitempty,max=400"`
 	Price       int64                 `form:"price" validate:"required,gt=0"`
 	Category    string                `form:"category" validate:"required,min=1"`
-	Media       *multipart.FileHeader `form:"media" validate:"required"`
+	Media       *multipart.FileHeader `form:"media" validate:"required,imagefile"`
 }
 
 func (s *postsService) ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error) {
@@ -59,25 +61,48 @@ func (s *postsService) ValidatePayload(r *http.Request) (payload *CreatePostPayl
 		Media:       nil,
 	}
 
-	// Get media file
-	file, fileHeader, err := r.FormFile("media")
+	// Get media file and make sure it's JPG/JPEG/PNG
+	mediaFile, fileHeader, err := r.FormFile("media")
 	if err != nil {
-		return &CreatePostPayload{}, nil, []utils.CustomValidationError{}, fmt.Errorf("failed to get media property from req: %w", err)
+		err = fmt.Errorf("failed to get media property from req: %w", err)
+		return
 	}
-	defer file.Close()
 	payload.Media = fileHeader
 
 	// Validate request
 	validationErrs = utils.ValidateData(payload)
 	if len(validationErrs) > 0 {
-		return &CreatePostPayload{}, nil, validationErrs, nil
+		return
 	}
 
 	return
 }
 
-func (s *postsService) CreatePost(ctx context.Context) error {
+func (s *postsService) CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (err error) {
+
+	// Does post description contains actual characters ? In case not, set Valid to false (meaning null in postgres)
+	postDescription := pgtype.Text{String: payload.Description, Valid: true}
+	if payload.Description == "" {
+		postDescription.Valid = false
+	}
+
+	createPostParams := repo.CreatePostParams{UserID: userID, Title: payload.Title, Description: postDescription, Price: payload.Price, Category: payload.Category, PhotoUrl: photoUrl}
+	postErr := s.repo.CreatePost(ctx, createPostParams)
+	if postErr != nil {
+		err = fmt.Errorf("failed to create a new post : %w", postErr)
+		return
+	}
 
 	return nil
 
+}
+
+func (s *postsService) GetPosts(ctx context.Context, categoryParam string) (posts []repo.GetPostsRow, err error) {
+	posts, getPostsErr := s.repo.GetPosts(ctx)
+	if getPostsErr != nil {
+		err = fmt.Errorf("failed to get posts : %w", getPostsErr)
+		return
+	}
+
+	return
 }
