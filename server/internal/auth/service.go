@@ -12,7 +12,6 @@ import (
 	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
 	"github.com/Diego-Davincci/Capita/internal/utils"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/oauth2"
 )
 
@@ -95,7 +94,8 @@ func (s *authService) CheckUserEmail(email string) (err error) {
 
 func (s *authService) UpsertUser(ctx context.Context, userData googleUser) (user repo.User, err error) {
 	// Does the user exist ?
-	googleUserID := pgtype.Text{String: userData.Email}
+	googleUserID := userData.Id
+	log.Println(googleUserID)
 	user, getUserErr := s.repo.GetUserBySocialID(ctx, googleUserID)
 
 	// If no user returned, create a new one
@@ -103,7 +103,7 @@ func (s *authService) UpsertUser(ctx context.Context, userData googleUser) (user
 		createUserParams := repo.CreateUserParams{SocialID: googleUserID, Email: userData.Email, Username: userData.Name, Picture: userData.Picture}
 		userCreated, createUserErr := s.repo.CreateUser(ctx, createUserParams)
 		if createUserErr != nil {
-			err = fmt.Errorf("error creating a new user %s", getUserErr)
+			err = fmt.Errorf("error creating a new user %s", createUserErr)
 			return
 		}
 		return userCreated, nil

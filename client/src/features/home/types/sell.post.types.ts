@@ -4,10 +4,10 @@ export const sellPostSchema = z.object({
   title: z
     .string()
     .min(1, { error: "El titulo es obligatorio" })
-    .max(70, { error: "Titulo debe tener máximo 70 carácteres" }),
+    .max(80, { error: "Titulo debe tener máximo 80 caracteres" }),
   description: z
     .string()
-    .max(400, { error: "Descripción debe tener máximo 400 carácteres" })
+    .max(1000, { error: "Descripción debe tener máximo 1000 caracteres" })
     .optional(),
   price: z.number().min(1, { error: "El precio es obligatorio" }),
   category: z.string().min(1, { error: "La categoría es obligatoria" }),
@@ -19,7 +19,7 @@ export const sellPostSchema = z.object({
 
 export type SellPost = z.infer<typeof sellPostSchema>;
 
-export interface Posts {
+export interface FeedPosts {
   username: string;
   userPicture: string;
   postID: number;

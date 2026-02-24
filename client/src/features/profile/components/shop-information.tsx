@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useState, type FormEvent } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import { shopDetailsSchema, type ShopDetails } from "../types";
 import {
   validateFields,
@@ -15,10 +15,16 @@ import {
 export const ShopInformation = () => {
   const [shopName, setShopName] = useState<string>("");
   const [shopDescription, setShopDescription] = useState<string>("");
-  const [shopWhatsappLink, setShopWhatsappLink] = useState<string>("");
+  const [shopWhatsappNumber, setShopWhatsappNumber] = useState<string>("");
   const [shopDetailsErrs, setShopDetailsErrs] = useState<FormFieldValidation[]>(
     []
   );
+
+  /** Strips non-digit characters so only a valid phone number can be entered. */
+  const handleWhatsappNumber = (e: ChangeEvent<HTMLInputElement>) => {
+    const digitsOnly = e.target.value.replace(/\D/g, "");
+    setShopWhatsappNumber(digitsOnly);
+  };
 
   const handleShopDetails = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,7 +32,7 @@ export const ShopInformation = () => {
     const shopDetails: ShopDetails = {
       shopName,
       shopDescription,
-      shopWhatsappLink,
+      shopWhatsappLink: `https://wa.me/${shopWhatsappNumber}`,
     };
 
     const errors = validateFields(shopDetailsSchema, shopDetails);
@@ -93,12 +99,20 @@ export const ShopInformation = () => {
             Link de WhatsApp
           </Label>
           <div className="space-y-1">
-            <Input
-              id="shop-link"
-              placeholder="https://whatsapp.com/channel/0029VaeyO64LNSa1krjoqw3w"
-              value={shopWhatsappLink}
-              onChange={(e) => setShopWhatsappLink(e.target.value)}
-            />
+            <div className="flex items-center rounded-md border border-input overflow-hidden focus-within:ring-1 focus-within:ring-ring">
+              <span className="px-3 py-2 bg-muted text-muted-foreground text-sm border-r select-none whitespace-nowrap">
+                https://wa.me/
+              </span>
+              <Input
+                id="shop-link"
+                className="border-0 rounded-none shadow-none focus-visible:ring-0"
+                placeholder="3504995513"
+                inputMode="numeric"
+                maxLength={15}
+                value={shopWhatsappNumber}
+                onChange={handleWhatsappNumber}
+              />
+            </div>
             <span className="text-xs text-muted-foreground">
               L@s comprador@s podrán contactarte directamente por WhatsApp
             </span>

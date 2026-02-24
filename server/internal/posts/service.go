@@ -28,8 +28,8 @@ func NewPostsService(repo repo.Querier, config utils.Config) Service {
 }
 
 type CreatePostPayload struct {
-	Title       string                `form:"title" validate:"required,min=1,max=100"`
-	Description string                `form:"description" validate:"omitempty,max=400"`
+	Title       string                `form:"title" validate:"required,min=1,max=80"`
+	Description string                `form:"description" validate:"omitempty,max=1000"`
 	Price       int64                 `form:"price" validate:"required,gt=0"`
 	Category    string                `form:"category" validate:"required,min=1"`
 	Media       *multipart.FileHeader `form:"media" validate:"required,imagefile"`

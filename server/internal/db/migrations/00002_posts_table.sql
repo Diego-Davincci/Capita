@@ -3,8 +3,8 @@
 CREATE TABLE "posts" (
   "post_id" bigserial PRIMARY KEY,
   "user_id" bigint NOT NULL,
-  "title" varchar(100) NOT NULL,
-  "description" varchar(400),
+  "title" varchar(80) NOT NULL,
+  "description" varchar(1000),
   "price" bigint NOT NULL,
   "category" text NOT NULL,
   "photo_url" text NOT NULL,

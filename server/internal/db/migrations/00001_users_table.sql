@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE "users" (
   "user_id" bigserial PRIMARY KEY,
-  "social_id" varchar UNIQUE,
+  "social_id" varchar UNIQUE NOT NULL,
   "email" varchar UNIQUE NOT NULL,
   "username" varchar NOT NULL,
   "picture" varchar NOT NULL,

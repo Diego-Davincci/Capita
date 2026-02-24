@@ -7,8 +7,6 @@ package repo
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -16,10 +14,10 @@ INSERT INTO users (social_id, email, username, picture) VALUES ($1, $2, $3, $4) 
 `
 
 type CreateUserParams struct {
-	SocialID pgtype.Text `json:"social_id"`
-	Email    string      `json:"email"`
-	Username string      `json:"username"`
-	Picture  string      `json:"picture"`
+	SocialID string `json:"social_id"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Picture  string `json:"picture"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -71,7 +69,7 @@ const getUserBySocialID = `-- name: GetUserBySocialID :one
 SELECT user_id, social_id, email, username, picture, is_user_valid, registered_at FROM users WHERE social_id = $1
 `
 
-func (q *Queries) GetUserBySocialID(ctx context.Context, socialID pgtype.Text) (User, error) {
+func (q *Queries) GetUserBySocialID(ctx context.Context, socialID string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserBySocialID, socialID)
 	var i User
 	err := row.Scan(

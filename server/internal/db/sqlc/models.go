@@ -24,7 +24,7 @@ type Post struct {
 type User struct {
 	UserID int64 `json:"user_id"`
 	// this field is for the unique id provided by google to identify a user
-	SocialID     pgtype.Text        `json:"social_id"`
+	SocialID     string             `json:"social_id"`
 	Email        string             `json:"email"`
 	Username     string             `json:"username"`
 	Picture      string             `json:"picture"`

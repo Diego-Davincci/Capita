@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { categories } from "../utils";
+import { categories, formatPrice } from "../utils";
 import {
   InputGroup,
   InputGroupAddon,
@@ -79,9 +79,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
     const cleanedPrice = inputValue.replace(/[^0-9]/g, "");
 
     // Add thousand separator
-    const formattedPrice = new Intl.NumberFormat("en-US").format(
-      Number(cleanedPrice)
-    );
+    const formattedPrice = formatPrice(cleanedPrice);
 
     setDisplayPrice(formattedPrice);
     setSellPost({
@@ -113,7 +111,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
     // Clear modal data
     clearModalData();
   };
-  const { data, isPending, mutateSellPost } = useSellPost({
+  const { isPending, mutateSellPost } = useSellPost({
     payload: sellPost,
     onSuccess,
   });
@@ -218,7 +216,7 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
             <Label htmlFor="create-post-title">
               Foto del producto/servicio 📸
             </Label>
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               <Input
                 id="create-post-title"
                 placeholder="Ej: Auriculares para Estudio"
@@ -233,21 +231,29 @@ export const SellPostModal = ({ open, setOpen }: Props) => {
                   {findFieldError("title", sellPostErrs)!.message}
                 </span>
               )}
+              <span className="text-xs text-muted-foreground block">
+                {sellPost.title.length}/80 Caracteres
+              </span>
             </div>
           </div>
           {/* Descripción */}
           <div className="space-y-4">
             <Label htmlFor="create-post-description">Descripción</Label>
-            <Textarea
-              className="h-32"
-              id="create-post-description"
-              placeholder="Ej: Samsung Galaxy Aiurbud Core perfectos para sesiones de estudio 📚 profundas. Cancelación de audio de ultima generación."
-              value={sellPost.description}
-              onChange={(e) =>
-                setSellPost({ ...sellPost, description: e.target.value })
-              }
-              disabled={isPending}
-            />
+            <div className="space-y-1">
+              <Textarea
+                className="h-32"
+                id="create-post-description"
+                placeholder="Ej: Samsung Galaxy Aiurbud Core perfectos para sesiones de estudio 📚 profundas. Cancelación de audio de ultima generación."
+                value={sellPost.description}
+                onChange={(e) => {
+                  setSellPost({ ...sellPost, description: e.target.value });
+                }}
+                disabled={isPending}
+              />
+              <span className="text-xs text-muted-foreground block">
+                {sellPost.description!.length}/1000 Caracteres
+              </span>
+            </div>
           </div>
           {/* Price */}
           <div className="space-y-4">
