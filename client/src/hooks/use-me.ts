@@ -21,7 +21,7 @@ export const useMe = () => {
   const getUser = async () => {
     try {
       setLoading(true);
-      const userData = await getHttpRequest<User>(`${API_URL}/auth/me`);
+      const userData = await getHttpRequest<User>(`${API_URL}/users/me`);
       updateUser(userData);
     } catch (error) {
       const err = error as ApiError;

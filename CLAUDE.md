@@ -101,7 +101,7 @@ internal/
 GET  /health
 GET  /auth/google
 GET  /auth/google/callback
-GET  /auth/me              (authenticated)
+GET  /users/me              (authenticated)
 POST /posts                (authenticated, multipart/form-data)
 GET  /posts                (authenticated, ?category= filter)
 ```

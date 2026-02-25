@@ -22,6 +22,7 @@ type Service interface {
 	UpsertUser(ctx context.Context, userData googleUser) (user repo.User, err error)
 	SetAuthCookies(w http.ResponseWriter, userID int64) (err error)
 	GetUser(ctx context.Context, userID int64) (user repo.GetUserByIDRow, err error)
+	CreateShop(ctx context.Context, shop repo.CreateShopParams) (err error)
 }
 
 type authService struct {
@@ -159,6 +160,17 @@ func (s *authService) GetUser(ctx context.Context, userID int64) (user repo.GetU
 		err = fmt.Errorf("error getting user %s", getUserErr)
 		log.Println(err)
 		return repo.GetUserByIDRow{}, err
+	}
+
+	return
+}
+
+func (s *authService) CreateShop(ctx context.Context, shop repo.CreateShopParams) (err error) {
+
+	shopErr := s.repo.CreateShop(ctx, shop)
+	if shopErr != nil {
+		err = fmt.Errorf("error creating a new shop %s", shopErr)
+		return
 	}
 
 	return

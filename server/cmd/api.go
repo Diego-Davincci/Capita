@@ -64,7 +64,12 @@ func (app *application) mount() http.Handler {
 	r.Route("/auth", func(r chi.Router) {
 		r.Get("/google", authController.GoogleOauth)
 		r.Get("/google/callback", authController.GoogleOauthCallback)
+	})
+
+	// Users routes
+	r.Route("/users", func(r chi.Router) {
 		r.With(authMiddleware.Auth).Get("/me", authController.Me)
+		r.With(authMiddleware.Auth).Post("/me/shop", authController.Shop)
 	})
 
 	// Post routes

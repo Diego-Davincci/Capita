@@ -81,7 +81,6 @@ func (m *middleware) Auth(next http.Handler) http.Handler {
 
 		}
 
-		log.Println()
 		ctx := context.WithValue(r.Context(), utils.UserContextKey, rtClaims.UserID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 

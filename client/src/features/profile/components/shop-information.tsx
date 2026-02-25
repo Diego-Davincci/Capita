@@ -17,7 +17,7 @@ export const ShopInformation = () => {
   const [shopDescription, setShopDescription] = useState<string>("");
   const [shopWhatsappNumber, setShopWhatsappNumber] = useState<string>("");
   const [shopDetailsErrs, setShopDetailsErrs] = useState<FormFieldValidation[]>(
-    []
+    [],
   );
 
   /** Strips non-digit characters so only a valid phone number can be entered. */
@@ -99,20 +99,14 @@ export const ShopInformation = () => {
             Link de WhatsApp
           </Label>
           <div className="space-y-1">
-            <div className="flex items-center rounded-md border border-input overflow-hidden focus-within:ring-1 focus-within:ring-ring">
-              <span className="px-3 py-2 bg-muted text-muted-foreground text-sm border-r select-none whitespace-nowrap">
-                https://wa.me/
-              </span>
-              <Input
-                id="shop-link"
-                className="border-0 rounded-none shadow-none focus-visible:ring-0"
-                placeholder="3504995513"
-                inputMode="numeric"
-                maxLength={15}
-                value={shopWhatsappNumber}
-                onChange={handleWhatsappNumber}
-              />
-            </div>
+            <Input
+              id="shop-link"
+              placeholder="3504995513"
+              inputMode="numeric"
+              maxLength={10}
+              value={shopWhatsappNumber}
+              onChange={handleWhatsappNumber}
+            />
             <span className="text-xs text-muted-foreground">
               L@s comprador@s podrán contactarte directamente por WhatsApp
             </span>

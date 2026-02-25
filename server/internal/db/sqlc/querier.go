@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	CreatePost(ctx context.Context, arg CreatePostParams) error
+	CreateShop(ctx context.Context, arg CreateShopParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	GetPosts(ctx context.Context) ([]GetPostsRow, error)
 	GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow, error)

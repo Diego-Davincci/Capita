@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, ShoppingBag, Store } from "lucide-react";
-import { formatPrice } from "../utils";
+import { formatPrice, homeCategories } from "../utils";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -15,7 +15,33 @@ type Props = {
   sellPost: FeedPosts;
 };
 
-export const SellPostCard = ({ sellPost: { postID, postPhotoURL } }: Props) => {
+/**
+ * Card that renders a single feed post with image, category badge,
+ * title, description, price, and seller info.
+ *
+ * Test cases:
+ * - Renders post image with zoom-on-hover effect
+ * - Shows category icon badge matching the post category
+ * - Clamps title to 2 lines
+ * - Scrollable description area; shows "Sin Descripción." when empty
+ * - Formats price with formatPrice()
+ * - Shows tooltip for usernames >= 35 chars; plain span otherwise
+ * - Shows store icon tooltip on the right
+ */
+export const SellPostCard = ({ sellPost }: Props) => {
+  const {
+    postID,
+    postPhotoURL,
+    category,
+    title,
+    description,
+    price,
+    username,
+    userPicture,
+  } = sellPost;
+
+  const CategoryIcon = homeCategories.find((c) => c.name === category)!.Icon;
+
   return (
     <div
       className="rounded-3xl relative group border border-border/50 overflow-hidden hover:border-primary/50 transition-all duration-200 animate-in hover:shadow-[0px_0px_15px] hover:shadow-primary/40 bg-linear-to-br from-violet-900/40 to-fuchsia-900/30 via-purple-900/40 h-158.5"
@@ -43,7 +69,7 @@ export const SellPostCard = ({ sellPost: { postID, postPhotoURL } }: Props) => {
       </div>
       {/* Information */}
       <div className="px-5 py-3 flex flex-col justify-between gap-y-2 h-78">
-        {/* Categories */}
+        {/* Category badge */}
         <Badge variant={"outline"} className="p-3">
           {category} <CategoryIcon />
         </Badge>
@@ -79,8 +105,8 @@ export const SellPostCard = ({ sellPost: { postID, postPhotoURL } }: Props) => {
           </Button>
         </div>
         <Separator />
-        {/* Post Owner Info */}
-        <div className="w-full flex items-center justify-between gap-x-5 overflow-hidden">
+        {/* Post owner info */}
+        <div className="w-full flex items-end justify-between gap-x-5 overflow-hidden">
           <div className="flex items-center gap-x-2 w-4/5">
             {/* Owner's photo */}
             <Avatar>
@@ -89,13 +115,17 @@ export const SellPostCard = ({ sellPost: { postID, postPhotoURL } }: Props) => {
                 {username[0]}
               </AvatarFallback>
             </Avatar>
-            {/* Owner's name */}
-            <Tooltip>
-              <TooltipTrigger delay={0} className={"truncate text-sm"}>
-                {username}
-              </TooltipTrigger>
-              <TooltipContent>{username}</TooltipContent>
-            </Tooltip>
+            {/* Owner's name — tooltip only for long names */}
+            {username.length >= 35 ? (
+              <Tooltip>
+                <TooltipTrigger delay={0} className={"truncate text-sm"}>
+                  {username}
+                </TooltipTrigger>
+                <TooltipContent>{username}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className="truncate text-sm">{username}</span>
+            )}
           </div>
           <div className="shrink-0">
             <Tooltip>

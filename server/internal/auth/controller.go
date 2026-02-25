@@ -62,9 +62,12 @@ func (c *authController) GoogleOauthCallback(w http.ResponseWriter, r *http.Requ
 	http.Redirect(w, r, c.config.Website, http.StatusSeeOther)
 }
 
+func (c *authController) Logout(w http.ResponseWriter, r *http.Request) {
+	utils.WriteResponse(w, http.StatusOK, nil, "")
+}
+
 func (c *authController) Me(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(utils.UserContextKey).(int64)
-	// log.Println("user id", userID)
 
 	user, err := c.service.GetUser(r.Context(), userID)
 	if err != nil {
@@ -76,6 +79,11 @@ func (c *authController) Me(w http.ResponseWriter, r *http.Request) {
 	utils.WriteResponse(w, http.StatusOK, user, "")
 }
 
-func (c *authController) Logout(w http.ResponseWriter, r *http.Request) {
-	utils.WriteResponse(w, http.StatusOK, nil, "")
+func (c *authController) Shop(w http.ResponseWriter, r *http.Request) {
+	//  userID := r.Context().Value(utils.UserContextKey).(int64)
+
+	//  c.service.CreateShop(r.Context(), )
+
+	utils.WriteResponse(w, http.StatusCreated, nil, "")
+
 }
