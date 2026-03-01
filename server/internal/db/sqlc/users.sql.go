@@ -7,6 +7,8 @@ package repo
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -41,15 +43,21 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT user_id as "userID", email, username, picture, is_user_valid as "isUserValid" FROM users WHERE user_id = $1
+SELECT users.user_id as "userID", users.email, users.username, users.picture, users.is_user_valid as "isUserValid", shop."name" as "shopName", shop.description as "shopDescription", shop.whatsapp_link as "shopWhatsappLink"
+FROM users 
+left join shop on users.user_id = shop.user_id
+WHERE users.user_id = $1
 `
 
 type GetUserByIDRow struct {
-	UserID      int64  `json:"userID"`
-	Email       string `json:"email"`
-	Username    string `json:"username"`
-	Picture     string `json:"picture"`
-	IsUserValid bool   `json:"isUserValid"`
+	UserID           int64       `json:"userID"`
+	Email            string      `json:"email"`
+	Username         string      `json:"username"`
+	Picture          string      `json:"picture"`
+	IsUserValid      bool        `json:"isUserValid"`
+	ShopName         pgtype.Text `json:"shopName"`
+	ShopDescription  pgtype.Text `json:"shopDescription"`
+	ShopWhatsappLink pgtype.Text `json:"shopWhatsappLink"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow, error) {
@@ -61,6 +69,9 @@ func (q *Queries) GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow
 		&i.Username,
 		&i.Picture,
 		&i.IsUserValid,
+		&i.ShopName,
+		&i.ShopDescription,
+		&i.ShopWhatsappLink,
 	)
 	return i, err
 }

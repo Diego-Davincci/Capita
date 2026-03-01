@@ -16,6 +16,9 @@ export const useStore = create<State & Actions>()((set) => ({
     email: "",
     picture: "",
     isUserValid: true,
+    shopName: null,
+    shopDescription: null,
+    shopWhatsappLink: null,
   },
   updateUser: (userData) =>
     set((store) => ({

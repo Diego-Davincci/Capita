@@ -21,10 +21,12 @@ type Post struct {
 }
 
 type Shop struct {
-	UserID       int64       `json:"user_id"`
-	Name         string      `json:"name"`
-	Description  pgtype.Text `json:"description"`
-	WhatsappLink string      `json:"whatsapp_link"`
+	UserID       int64              `json:"user_id"`
+	Name         string             `json:"name"`
+	Description  pgtype.Text        `json:"description"`
+	WhatsappLink string             `json:"whatsapp_link"`
+	RegisteredAt pgtype.Timestamptz `json:"registered_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
 // social_id and email must be unique

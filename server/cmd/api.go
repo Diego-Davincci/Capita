@@ -7,7 +7,9 @@ import (
 
 	"github.com/Diego-Davincci/Capita/internal/auth"
 	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
+	validatorMiddleware "github.com/Diego-Davincci/Capita/internal/middleware"
 	"github.com/Diego-Davincci/Capita/internal/posts"
+	"github.com/Diego-Davincci/Capita/internal/users"
 	utils "github.com/Diego-Davincci/Capita/internal/utils"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -67,9 +69,11 @@ func (app *application) mount() http.Handler {
 	})
 
 	// Users routes
+	usersService := users.NewUsersService(repository)
+	usersController := users.NewUsersController(usersService)
 	r.Route("/users", func(r chi.Router) {
-		r.With(authMiddleware.Auth).Get("/me", authController.Me)
-		r.With(authMiddleware.Auth).Post("/me/shop", authController.Shop)
+		r.With(authMiddleware.Auth).Get("/me", usersController.Me)
+		r.With(authMiddleware.Auth, validatorMiddleware.ValidateBody[users.CreateShopPayload]).Post("/me/shop", usersController.Shop)
 	})
 
 	// Post routes

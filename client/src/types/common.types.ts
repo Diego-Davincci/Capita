@@ -10,4 +10,7 @@ export interface User {
   username: string;
   picture: string;
   isUserValid: boolean;
+  shopName?: string | null;
+  shopDescription?: string | null;
+  shopWhatsappLink?: string | null;
 }
