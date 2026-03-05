@@ -1,4 +1,4 @@
-import { Navbar } from "@/features/home/components";
+import { Navbar } from "@/components/layout/navbar";
 import { Outlet, createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/_layout")({

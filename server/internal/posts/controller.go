@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/Diego-Davincci/Capita/internal/middleware"
 	"github.com/Diego-Davincci/Capita/internal/utils"
 )
 
@@ -56,13 +57,14 @@ func (c *postsController) HandlePost(w http.ResponseWriter, r *http.Request) {
 func (c *postsController) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
+	params := r.Context().Value(middleware.QueryCtxKey).(GetPostsQueries)
 
-	posts, err := c.service.GetPosts(ctx, "")
+	posts, err := c.service.GetPosts(ctx, params.Category)
 	if err != nil {
 		log.Println(err)
 		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
 		return
 	}
 
-	utils.WriteResponse(w, http.StatusAccepted, posts, "")
+	utils.WriteResponse(w, http.StatusOK, posts, "")
 }

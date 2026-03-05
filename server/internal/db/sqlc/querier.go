@@ -12,6 +12,11 @@ type Querier interface {
 	CreatePost(ctx context.Context, arg CreatePostParams) error
 	CreateShop(ctx context.Context, arg CreateShopParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	// Returns posts ordered by a recency-biased random score.
+	// Newer posts have a higher expected score but older ones can still surface.
+	// score = RANDOM() × 0.5^(age_in_weeks), half-life = 7 days.
+	// Pass an empty string for category to return all categories.
+	GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]GetFeedPostsRow, error)
 	GetPosts(ctx context.Context) ([]GetPostsRow, error)
 	GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow, error)
 	GetUserBySocialID(ctx context.Context, socialID string) (User, error)

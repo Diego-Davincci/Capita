@@ -15,7 +15,7 @@ import (
 type Service interface {
 	ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error)
 	CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (err error)
-	GetPosts(ctx context.Context, categoryParam string) (posts []repo.GetPostsRow, err error)
+	GetPosts(ctx context.Context, categoryParam string) (posts []repo.GetFeedPostsRow, err error)
 }
 
 type postsService struct {
@@ -97,12 +97,65 @@ func (s *postsService) CreatePost(ctx context.Context, userID int64, photoUrl st
 
 }
 
-func (s *postsService) GetPosts(ctx context.Context, categoryParam string) (posts []repo.GetPostsRow, err error) {
-	posts, getPostsErr := s.repo.GetPosts(ctx)
+type GetPostsQueries struct {
+	Category string `json:"category" validate:"omitempty"`
+}
+
+// GetPosts fetches a feed of posts ordered by a recency-biased random score
+// and ensures no two consecutive posts share the same category.
+func (s *postsService) GetPosts(ctx context.Context, categoryParam string) (posts []repo.GetFeedPostsRow, err error) {
+
+	posts, getPostsErr := s.repo.GetFeedPosts(ctx, repo.GetFeedPostsParams{Category: categoryParam, Max: 20})
 	if getPostsErr != nil {
 		err = fmt.Errorf("failed to get posts : %w", getPostsErr)
 		return
 	}
 
-	return
+	return ensureCategoryVariety(posts), nil
+}
+
+// ensureCategoryVariety reorders posts so that no two consecutive posts share
+// the same category, preserving the weighted-random ordering as much as possible.
+//
+// Test cases:
+// - All different categories → order unchanged
+// - All same category → order unchanged (no swaps possible)
+// - Two consecutive same-category posts → second one is swapped with next different-category post
+// - Empty or single-item slice → returned as-is
+func ensureCategoryVariety(posts []repo.GetFeedPostsRow) []repo.GetFeedPostsRow {
+
+	if len(posts) <= 1 {
+		return posts
+	}
+
+	result := make([]repo.GetFeedPostsRow, 0, len(posts))
+	remaining := make([]repo.GetFeedPostsRow, len(posts))
+	copy(remaining, posts)
+
+	for len(remaining) > 0 {
+
+		lastCategory := ""
+		if len(result) > 0 {
+			lastCategory = result[len(result)-1].Category
+		}
+
+		placed := false
+		for i, p := range remaining {
+			if p.Category != lastCategory {
+				result = append(result, p)
+				remaining = append(remaining[:i], remaining[i+1:]...)
+				placed = true
+				break
+			}
+		}
+
+		if !placed {
+			// All remaining posts share the same category — append as-is
+			result = append(result, remaining...)
+			break
+		}
+
+	}
+
+	return result
 }

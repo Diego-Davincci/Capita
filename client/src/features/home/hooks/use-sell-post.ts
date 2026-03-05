@@ -8,6 +8,17 @@ type Props = {
   onSuccess: () => void;
 };
 
+/**
+ * useSellPost — submits a new post to the feed via multipart/form-data.
+ * Converts the SellPost JSON payload into FormData before sending to POST /posts.
+ *
+ * Test cases:
+ * 1. Calls onSuccess callback after a successful POST response
+ * 2. FormData includes all required fields (title, category, price, media)
+ * 3. Optional description field is only appended when present
+ * 4. isPending is true while the request is in-flight, false otherwise
+ * 5. Does not call mutate if mutateSellPost is not invoked
+ */
 export const useSellPost = ({ payload, onSuccess }: Props) => {
   const { data, isPending, mutate } = useApiMutation<
     FormData,

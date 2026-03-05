@@ -40,7 +40,7 @@ func (s *usersService) GetUser(ctx context.Context, userID int64) (user repo.Get
 type CreateShopPayload struct {
 	Name         string `json:"name" validate:"required,min=1,max=50"`
 	Description  string `json:"description" validate:"omitempty"`
-	WhatsappLink string `json:"whatsappLink" validate:"required,max=10,min=1"`
+	WhatsappLink string `json:"whatsappLink" validate:"required,min=1,len=10"`
 }
 
 func (s *usersService) CreateShop(ctx context.Context, userID int64, payload CreateShopPayload) (err error) {

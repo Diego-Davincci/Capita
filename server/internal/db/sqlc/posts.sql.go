@@ -36,6 +36,82 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
 	return err
 }
 
+const getFeedPosts = `-- name: GetFeedPosts :many
+SELECT
+  u.username        AS "username",
+  u.picture         AS "userPicture",
+  p.post_id         AS "postID",
+  p.user_id         AS "userID",
+  p.title,
+  p.description,
+  p.price,
+  p.category,
+  p.photo_url       AS "postPhotoURL",
+  p.registered_at   AS "registeredAt",
+  s.whatsapp_link	AS "whatsappLink"
+FROM posts p
+LEFT JOIN users u ON u.user_id = p.user_id
+LEFT JOIN shop s on s.user_id = p.user_id 
+WHERE ($1::text = '' OR p.category = $1::text)
+ORDER BY RANDOM() * POW(0.5, EXTRACT(EPOCH FROM NOW() - p.registered_at) / 604800.0) DESC
+LIMIT $2
+`
+
+type GetFeedPostsParams struct {
+	Category string `json:"category"`
+	Max      int32  `json:"max"`
+}
+
+type GetFeedPostsRow struct {
+	Username     pgtype.Text        `json:"username"`
+	UserPicture  pgtype.Text        `json:"userPicture"`
+	PostID       int64              `json:"postID"`
+	UserID       int64              `json:"userID"`
+	Title        string             `json:"title"`
+	Description  pgtype.Text        `json:"description"`
+	Price        int64              `json:"price"`
+	Category     string             `json:"category"`
+	PostPhotoURL string             `json:"postPhotoURL"`
+	RegisteredAt pgtype.Timestamptz `json:"registeredAt"`
+	WhatsappLink pgtype.Text        `json:"whatsappLink"`
+}
+
+// Returns posts ordered by a recency-biased random score.
+// Newer posts have a higher expected score but older ones can still surface.
+// score = RANDOM() × 0.5^(age_in_weeks), half-life = 7 days.
+// Pass an empty string for category to return all categories.
+func (q *Queries) GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]GetFeedPostsRow, error) {
+	rows, err := q.db.Query(ctx, getFeedPosts, arg.Category, arg.Max)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFeedPostsRow
+	for rows.Next() {
+		var i GetFeedPostsRow
+		if err := rows.Scan(
+			&i.Username,
+			&i.UserPicture,
+			&i.PostID,
+			&i.UserID,
+			&i.Title,
+			&i.Description,
+			&i.Price,
+			&i.Category,
+			&i.PostPhotoURL,
+			&i.RegisteredAt,
+			&i.WhatsappLink,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getPosts = `-- name: GetPosts :many
 SELECT u.username as "username", u.picture "userPicture", p.post_id as "postID", p.user_id as "userID", p.title, p.description, p.price, p.category, 
 p.photo_url as "postPhotoURL", p.registered_at as "registeredAt" FROM posts p 

@@ -12,6 +12,7 @@ type Props = {
   shopDetails: ShopDetails;
   errors: FormFieldValidation[];
   isPending: boolean;
+  hasChanges: boolean;
   onChangeName: (e: ChangeEvent<HTMLInputElement>) => void;
   onChangeDescription: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   onChangeWhatsapp: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -28,11 +29,14 @@ type Props = {
  * - Field error spans render when errors array contains matching field name
  * - Field error spans are absent when errors array is empty
  * - onSubmit is called when the form is submitted
+ * - Submit button is disabled when hasChanges is false
+ * - Submit button is enabled when hasChanges is true and not pending
  */
 export const ShopInformationForm = ({
   shopDetails,
   errors,
   isPending,
+  hasChanges,
   onChangeName,
   onChangeDescription,
   onChangeWhatsapp,
@@ -120,7 +124,7 @@ export const ShopInformationForm = ({
           className={
             "w-40 bg-linear-to-r from-violet-600 via-purple-600 to-fuchsia-500/40 cursor-pointer shadow-[0px_0px_2px] shadow-primary hover:shadow-[0px_0px_5px] transition-all hover:scale-105 active:scale-100"
           }
-          disabled={isPending}
+          disabled={isPending || !hasChanges}
         >
           {isPending ? (
             <>

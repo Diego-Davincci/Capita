@@ -21,8 +21,6 @@ The API has a feature based architecture to separate specific concerns, logic, a
 - Service Layer 👉 Handle all bussines logic
 - Repository Layer 👉 Handle the data layer by accessing the DB
 
-<br/>
-
 ```
 server/
 ├── cmd/                              # 🚀 Application entry point & initialization
@@ -73,3 +71,41 @@ server/
 ├── .air.toml                         # Hot-reload configuration for development
 └── README.md                         # This file
 ```
+
+## Specific Features
+
+### Feed Algorithm — Recency-Biased Randomness + Category Variety
+
+The `GET /posts` endpoint uses a two-layer algorithm to make the feed feel alive rather than purely chronological.
+
+**Layer 1 — SQL: Weighted random ordering**
+
+Each post receives a score computed entirely in the DB:
+
+```
+score = RANDOM() × 0.5^(age_in_weeks)
+```
+
+`0.5^(age_in_weeks)` is an exponential decay with a **7-day half-life** — every week a post's maximum possible score halves. New posts dominate on average, but an older post that rolls a high random number can still surface.
+
+| Post age | Max score |
+| -------- | --------- |
+| Today    | 1.00      |
+| 1 week   | 0.50      |
+| 2 weeks  | 0.25      |
+| 1 month  | ~0.05     |
+
+The query also accepts an optional `category` param. Passing an empty string returns all categories; passing `"Ropa"` returns only that category — handled in a single query with no branching.
+
+**Layer 2 — Go: Category variety pass**
+
+After the DB returns the scored list, a single O(n) pass ensures no two consecutive posts share the same category. It greedily picks the earliest post in the remaining list that differs from the last placed one, preserving the weighted-random order as much as possible.
+
+```
+DB output:  [Ropa, Ropa, Tec, Lib, Ropa, Tec]
+After pass: [Ropa, Tec, Ropa, Lib, Ropa, Tec]  ← no two same in a row
+```
+
+This separation of concerns keeps retrieval logic in SQL and presentation logic in Go.
+
+---

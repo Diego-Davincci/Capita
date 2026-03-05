@@ -21,7 +21,7 @@ type CustomValidationError struct {
 	Message string `json:"message"`
 }
 
-// Fn for custom message when validating data
+// fn for custom message when validating data
 func msgForTag(fe validator.FieldError) string {
 	switch fe.Tag() {
 	case "required":
@@ -38,6 +38,8 @@ func msgForTag(fe validator.FieldError) string {
 		return "El archivo debe ser una imagen (JPG, JPEG, PNG)"
 	case "url":
 		return "El enlace no es una URL válida"
+	case "len":
+		return "El campo no posee la cantidad de caracteres requeridos"
 	}
 	return fe.Error() // default error
 }

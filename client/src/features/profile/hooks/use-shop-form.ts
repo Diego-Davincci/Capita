@@ -22,6 +22,8 @@ import { useStore } from "@/store";
  * - onSubmit calls mutate with the correct ShopDetails payload when valid
  * - isPending is true while the mutation is in-flight
  * - success toast fires when the mutation resolves
+ * - hasChanges is false when all fields match the saved store values
+ * - hasChanges is true when any field differs from the saved store values
  */
 export const useShopForm = () => {
   const { user, updateUser } = useStore(
@@ -33,6 +35,11 @@ export const useShopForm = () => {
     whatsappLink: user.shopWhatsappLink ? user.shopWhatsappLink : "",
   });
   const [errors, setErrors] = useState<FormFieldValidation[]>([]);
+
+  const hasChanges =
+    shopDetails.name !== (user.shopName ?? "") ||
+    shopDetails.description !== (user.shopDescription ?? "") ||
+    shopDetails.whatsappLink !== (user.shopWhatsappLink ?? "");
 
   const { isPending, mutate } = useApiMutation<ShopDetails, ApiRsp<undefined>>({
     method: "POST",
@@ -84,6 +91,7 @@ export const useShopForm = () => {
     shopDetails,
     errors,
     isPending,
+    hasChanges,
     onChangeName,
     onChangeDescription,
     onChangeWhatsapp,

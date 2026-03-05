@@ -8,7 +8,7 @@ import * as motion from "motion/react-client";
 import "./index.css";
 import ReactQueryWrapper from "./lib/api/query-client.tsx";
 import { ThemeProvider } from "./components/theme-provider.tsx";
-import { useMe } from "./hooks/use-me.ts";
+import { useMe } from "./features/auth/hooks";
 import { AlertCircleIcon, Store } from "lucide-react";
 import { Highlighter } from "./components/ui/highlighter.tsx";
 import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert.tsx";
@@ -99,5 +99,5 @@ function App() {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
-  </StrictMode>
+  </StrictMode>,
 );

@@ -1,7 +1,10 @@
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, ShoppingBag, Store } from "lucide-react";
-import { formatPrice, homeCategories } from "../utils";
+import { formatPrice, homeCategories, createWhatsappLink } from "../utils";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -38,9 +41,15 @@ export const SellPostCard = ({ sellPost }: Props) => {
     price,
     username,
     userPicture,
+    whatsappLink,
+    registeredAt,
   } = sellPost;
 
   const CategoryIcon = homeCategories.find((c) => c.name === category)!.Icon;
+  const timeCreation = formatDistanceToNow(registeredAt, {
+    addSuffix: true,
+    locale: es,
+  });
 
   return (
     <div
@@ -69,16 +78,22 @@ export const SellPostCard = ({ sellPost }: Props) => {
       </div>
       {/* Information */}
       <div className="px-5 py-3 flex flex-col justify-between gap-y-2 h-78">
-        {/* Category badge */}
-        <Badge variant={"outline"} className="p-3">
-          {category} <CategoryIcon />
-        </Badge>
+        <div className="flex gap-x-3 items-center">
+          {/* Category badge */}
+          <Badge variant={"outline"} className="p-3">
+            {category} <CategoryIcon />
+          </Badge>
+          {/* Time Ago */}
+          <p className="text-xs text-muted-foreground capitalize">
+            {timeCreation}
+          </p>
+        </div>
         {/* Title */}
         <div className="max-h-14 overflow-hidden">
           <p className="font-semibold line-clamp-2">{title}</p>
         </div>
         {/* Description */}
-        <p className="text-[13px] text-muted-foreground truncate block h-24 overflow-y-scroll">
+        <p className="text-[13px] text-muted-foreground block h-24 overflow-y-scroll">
           {description ? (
             description.split("\n").map((d, i) => (
               <span key={d + i}>
@@ -99,6 +114,9 @@ export const SellPostCard = ({ sellPost }: Props) => {
             className={
               "cursor-pointer transition-all hover:scale-[1.05] active:scale-100"
             }
+            onClick={() => {
+              window.open(createWhatsappLink(whatsappLink!));
+            }}
           >
             <ShoppingBag />
             Comprar

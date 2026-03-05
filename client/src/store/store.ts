@@ -1,4 +1,4 @@
-import type { User } from "@/types/common.types";
+import type { User } from "@/features/auth/types";
 import { create } from "zustand";
 
 type State = {
