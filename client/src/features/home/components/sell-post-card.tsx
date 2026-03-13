@@ -13,6 +13,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { FeedPosts } from "../types";
+import { use, useState } from "react";
+import { ShopModal } from "./shop-modal";
 
 type Props = {
   sellPost: FeedPosts;
@@ -42,6 +44,8 @@ export const SellPostCard = ({ sellPost }: Props) => {
     username,
     userPicture,
     whatsappLink,
+    shopName,
+    shopDescription,
     registeredAt,
   } = sellPost;
 
@@ -50,6 +54,9 @@ export const SellPostCard = ({ sellPost }: Props) => {
     addSuffix: true,
     locale: es,
   });
+
+  const [shopModalOpen, setShopModalOpen] = useState<boolean>(false);
+  const isShop = whatsappLink && shopName;
 
   return (
     <div
@@ -145,14 +152,32 @@ export const SellPostCard = ({ sellPost }: Props) => {
               <span className="truncate text-sm">{username}</span>
             )}
           </div>
-          <div className="shrink-0">
-            <Tooltip>
-              <TooltipTrigger delay={0}>
-                <Store className="text-purple-400 size-4" />
-              </TooltipTrigger>
-              <TooltipContent>Esto es un Emprendimiento !</TooltipContent>
-            </Tooltip>
-          </div>
+          {isShop && (
+            <div className="shrink-0">
+              <Tooltip>
+                <TooltipTrigger
+                  className={"cursor-pointer"}
+                  delay={0}
+                  onClick={() => {
+                    setShopModalOpen(true);
+                  }}
+                >
+                  <Store className="text-purple-400 size-4" />
+                </TooltipTrigger>
+                <TooltipContent>Esto es un Emprendimiento !</TooltipContent>
+              </Tooltip>
+              {/* Shop modal */}
+              <ShopModal
+                open={shopModalOpen}
+                setOpen={setShopModalOpen}
+                shopName={shopName}
+                shopDescription={shopDescription}
+                username={username}
+                userPicture={userPicture}
+                whatsappLink={whatsappLink}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

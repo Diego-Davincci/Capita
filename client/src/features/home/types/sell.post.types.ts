@@ -31,4 +31,6 @@ export interface FeedPosts {
   postPhotoURL: string;
   registeredAt: Date;
   whatsappLink?: string | null;
+  shopName?: string | null;
+  shopDescription?: string | null;
 }

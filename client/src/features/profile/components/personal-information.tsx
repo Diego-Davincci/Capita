@@ -5,6 +5,8 @@ import { Mail, User } from "lucide-react";
 export const PersonalInformation = () => {
   const user = useStore((store) => store.user);
 
+  console.log(user.picture);
+
   return (
     <>
       {/* Personal Information */}
@@ -14,7 +16,11 @@ export const PersonalInformation = () => {
       </h2>
       <div className="w-full flex items-center gap-x-5">
         <Avatar className="size-28 ring-4 ring-purple-500">
-          <AvatarImage src={user.picture} alt="User Profile Pic" />
+          <AvatarImage
+            src={user.picture}
+            alt="User Profile Pic"
+            referrerPolicy="no-referrer"
+          />
           <AvatarFallback className="bg-transparent text-white text-3xl">
             {user.username[0]}
           </AvatarFallback>

@@ -119,4 +119,5 @@ Post images are validated server-side (JPG/JPEG/PNG only, max 10MB) and uploaded
 - Save memory context (decisions, patterns, preferences) to this file so it persists across sessions.
 - Fronted 👉 When creating hooks/medium size functions or bigger, make sure to add a brief jsdoc comment to understand better the code.
 - Frontend 👉 When creating new components, custom hooks, functions, add a comment with test cases.
+- Frontend 👉 When creating new components, make sure styling follows the system design and everything is responsive for mobile, tablet, pc, laptops, and common devices.
 - Backend 👉 When producing new Go code, make sure to add a brief comment explaining its functionality and also add test cases as comment.

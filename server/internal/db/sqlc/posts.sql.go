@@ -48,7 +48,9 @@ SELECT
   p.category,
   p.photo_url       AS "postPhotoURL",
   p.registered_at   AS "registeredAt",
-  s.whatsapp_link	AS "whatsappLink"
+  s.whatsapp_link	  AS "whatsappLink",
+  s.name            AS "shopName",
+  s.description     AS "shopDescription"
 FROM posts p
 LEFT JOIN users u ON u.user_id = p.user_id
 LEFT JOIN shop s on s.user_id = p.user_id 
@@ -63,17 +65,19 @@ type GetFeedPostsParams struct {
 }
 
 type GetFeedPostsRow struct {
-	Username     pgtype.Text        `json:"username"`
-	UserPicture  pgtype.Text        `json:"userPicture"`
-	PostID       int64              `json:"postID"`
-	UserID       int64              `json:"userID"`
-	Title        string             `json:"title"`
-	Description  pgtype.Text        `json:"description"`
-	Price        int64              `json:"price"`
-	Category     string             `json:"category"`
-	PostPhotoURL string             `json:"postPhotoURL"`
-	RegisteredAt pgtype.Timestamptz `json:"registeredAt"`
-	WhatsappLink pgtype.Text        `json:"whatsappLink"`
+	Username        pgtype.Text        `json:"username"`
+	UserPicture     pgtype.Text        `json:"userPicture"`
+	PostID          int64              `json:"postID"`
+	UserID          int64              `json:"userID"`
+	Title           string             `json:"title"`
+	Description     pgtype.Text        `json:"description"`
+	Price           int64              `json:"price"`
+	Category        string             `json:"category"`
+	PostPhotoURL    string             `json:"postPhotoURL"`
+	RegisteredAt    pgtype.Timestamptz `json:"registeredAt"`
+	WhatsappLink    pgtype.Text        `json:"whatsappLink"`
+	ShopName        pgtype.Text        `json:"shopName"`
+	ShopDescription pgtype.Text        `json:"shopDescription"`
 }
 
 // Returns posts ordered by a recency-biased random score.
@@ -101,6 +105,8 @@ func (q *Queries) GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]G
 			&i.PostPhotoURL,
 			&i.RegisteredAt,
 			&i.WhatsappLink,
+			&i.ShopName,
+			&i.ShopDescription,
 		); err != nil {
 			return nil, err
 		}

@@ -22,7 +22,9 @@ SELECT
   p.category,
   p.photo_url       AS "postPhotoURL",
   p.registered_at   AS "registeredAt",
-  s.whatsapp_link	AS "whatsappLink"
+  s.whatsapp_link	  AS "whatsappLink",
+  s.name            AS "shopName",
+  s.description     AS "shopDescription"
 FROM posts p
 LEFT JOIN users u ON u.user_id = p.user_id
 LEFT JOIN shop s on s.user_id = p.user_id 

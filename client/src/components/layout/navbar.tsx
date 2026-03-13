@@ -77,7 +77,11 @@ export const Navbar = () => {
 
           <div onClick={() => navigate({ to: "/profile" })}>
             <Avatar className="cursor-pointer size-10 hover:scale-110 transition-all active:scale-100">
-              <AvatarImage src={user.picture} alt="User Img" />
+              <AvatarImage
+                src={user.picture}
+                alt="User Img"
+                referrerPolicy="no-referrer"
+              />
               <AvatarFallback className="bg-violet-500 text-white">
                 {user.username[0]}
               </AvatarFallback>
