@@ -34,24 +34,22 @@ func (s *usersService) GetUser(ctx context.Context, userID int64) (user repo.Get
 }
 
 // Test cases:
-// - Name required, 1–50 chars
+// - Name optional, 1–50 chars
 // - Description optional, max 500 chars
-// - WhatsappLink required, valid URL (https://wa.me/<number> satisfies this)
+// - WhatsappLink required, lenght of 10 chars
 type CreateShopPayload struct {
-	Name         string `json:"name" validate:"required,min=1,max=50"`
-	Description  string `json:"description" validate:"omitempty"`
-	WhatsappLink string `json:"whatsappLink" validate:"required,min=1,len=10"`
+	Name        string `json:"name" validate:"omitempty,min=1,max=50"`
+	Description string `json:"description" validate:"omitempty"`
+	PhoneNumber string `json:"phoneNumber" validate:"required,min=1,len=10"`
 }
 
 func (s *usersService) CreateShop(ctx context.Context, userID int64, payload CreateShopPayload) (err error) {
 
-	// Does shop description contains actual characters ? In case not, set Valid to false (meaning null in postgres)
-	textDescription := pgtype.Text{String: payload.Description, Valid: true}
-	if payload.Description == "" {
-		textDescription.Valid = false
-	}
+	// Does shop description/name contains actual characters ? In case not, set Valid to false (meaning null in postgres)
+	textDescription := pgtype.Text{String: payload.Description, Valid: payload.Description != ""}
+	textName := pgtype.Text{String: payload.Name, Valid: payload.Name != ""} // ← new
 
-	shopParams := repo.CreateShopParams{UserID: userID, Name: payload.Name, Description: textDescription, WhatsappLink: payload.WhatsappLink}
+	shopParams := repo.CreateShopParams{UserID: userID, Name: textName, Description: textDescription, PhoneNumber: payload.PhoneNumber}
 
 	shopErr := s.repo.CreateShop(ctx, shopParams)
 	if shopErr != nil {

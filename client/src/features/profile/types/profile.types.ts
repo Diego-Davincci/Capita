@@ -3,10 +3,10 @@ import { z } from "zod";
 export const shopDetailsSchema = z.object({
   name: z
     .string()
-    .min(1, { error: "Nombre de la tienda es obligatorio" })
-    .max(50, { error: "Nombre de la tienda máximo 50 caracteres" }),
+    .max(50, { error: "Nombre de la tienda máximo 50 caracteres" })
+    .optional(),
   description: z.string().optional(),
-  whatsappLink: z
+  phoneNumber: z
     .string()
     .min(1, {
       error:

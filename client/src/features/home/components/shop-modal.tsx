@@ -17,7 +17,7 @@ type Props = {
   shopDescription?: string | null;
   username: string;
   userPicture: string;
-  whatsappLink: string;
+  phoneNumber: string;
 };
 
 /**
@@ -38,7 +38,7 @@ export const ShopModal = ({
   userPicture,
   username,
   shopDescription,
-  whatsappLink,
+  phoneNumber,
 }: Props) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -86,9 +86,7 @@ export const ShopModal = ({
           className={
             "w-full cursor-pointer mt-1 bg-linear-to-r from-violet-600 via-purple-600 to-fuchsia-600 hover:scale-[1.02] active:scale-100 transition-all"
           }
-          onClick={() =>
-            window.open(createWhatsappLink(whatsappLink), "_blank")
-          }
+          onClick={() => window.open(createWhatsappLink(phoneNumber), "_blank")}
         >
           <MessageCircle className="size-4" />
           Contactar emprendimiento

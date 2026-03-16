@@ -43,21 +43,21 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT users.user_id as "userID", users.email, users.username, users.picture, users.is_user_valid as "isUserValid", shop."name" as "shopName", shop.description as "shopDescription", shop.whatsapp_link as "shopWhatsappLink"
+SELECT users.user_id as "userID", users.email, users.username, users.picture, users.is_user_valid as "isUserValid", shop."name" as "shopName", shop.description as "shopDescription", shop.phone_number as "phoneNumber"
 FROM users 
 left join shop on users.user_id = shop.user_id
 WHERE users.user_id = $1
 `
 
 type GetUserByIDRow struct {
-	UserID           int64       `json:"userID"`
-	Email            string      `json:"email"`
-	Username         string      `json:"username"`
-	Picture          string      `json:"picture"`
-	IsUserValid      bool        `json:"isUserValid"`
-	ShopName         pgtype.Text `json:"shopName"`
-	ShopDescription  pgtype.Text `json:"shopDescription"`
-	ShopWhatsappLink pgtype.Text `json:"shopWhatsappLink"`
+	UserID          int64       `json:"userID"`
+	Email           string      `json:"email"`
+	Username        string      `json:"username"`
+	Picture         string      `json:"picture"`
+	IsUserValid     bool        `json:"isUserValid"`
+	ShopName        pgtype.Text `json:"shopName"`
+	ShopDescription pgtype.Text `json:"shopDescription"`
+	PhoneNumber     pgtype.Text `json:"phoneNumber"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow, error) {
@@ -71,7 +71,7 @@ func (q *Queries) GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow
 		&i.IsUserValid,
 		&i.ShopName,
 		&i.ShopDescription,
-		&i.ShopWhatsappLink,
+		&i.PhoneNumber,
 	)
 	return i, err
 }

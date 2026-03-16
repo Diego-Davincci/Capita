@@ -6,5 +6,5 @@ export interface User {
   isUserValid: boolean;
   shopName?: string | null;
   shopDescription?: string | null;
-  shopWhatsappLink?: string | null;
+  phoneNumber?: string | null;
 }

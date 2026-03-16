@@ -32,23 +32,26 @@ export const useShopForm = () => {
   const [shopDetails, setShopDetails] = useState<ShopDetails>({
     name: user.shopName ? user.shopName : "",
     description: user.shopDescription ? user.shopDescription : "",
-    whatsappLink: user.shopWhatsappLink ? user.shopWhatsappLink : "",
+    phoneNumber: user.phoneNumber ? user.phoneNumber : "",
   });
   const [errors, setErrors] = useState<FormFieldValidation[]>([]);
 
   const hasChanges =
     shopDetails.name !== (user.shopName ?? "") ||
     shopDetails.description !== (user.shopDescription ?? "") ||
-    shopDetails.whatsappLink !== (user.shopWhatsappLink ?? "");
+    shopDetails.phoneNumber !== (user.phoneNumber ?? "");
 
   const { isPending, mutate } = useApiMutation<ShopDetails, ApiRsp<undefined>>({
     method: "POST",
     url: `${API_URL}/users/me/shop`,
     onSuccessFn: () => {
       // Show toast notification
-      const toasTitle = user.shopName
+
+      const toasTitle = user.shopName // Shop already created
         ? "Tienda actualizada existosamente! 🛍️"
-        : "Tienda guardada exitosamente! 🛍️";
+        : shopDetails.name && shopDetails.name !== ""
+          ? "Tienda guardada exitosamente! 🛍️"
+          : "Número guardado exitosamente! 📱";
       toast.success(toasTitle, {
         position: "top-center",
         duration: 7000,
@@ -59,7 +62,7 @@ export const useShopForm = () => {
         ...user,
         shopName: shopDetails.name,
         shopDescription: shopDetails.description,
-        shopWhatsappLink: shopDetails.whatsappLink,
+        phoneNumber: shopDetails.phoneNumber,
       });
     },
   });
@@ -67,7 +70,7 @@ export const useShopForm = () => {
   /** Strips non-digit characters so only a valid phone number can be entered. */
   const onChangeWhatsapp = (e: ChangeEvent<HTMLInputElement>) => {
     const digitsOnly = e.target.value.replace(/\D/g, "");
-    setShopDetails({ ...shopDetails, whatsappLink: digitsOnly });
+    setShopDetails({ ...shopDetails, phoneNumber: digitsOnly });
   };
 
   const onChangeName = (e: ChangeEvent<HTMLInputElement>) => {

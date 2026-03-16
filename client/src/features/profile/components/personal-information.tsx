@@ -5,8 +5,6 @@ import { Mail, User } from "lucide-react";
 export const PersonalInformation = () => {
   const user = useStore((store) => store.user);
 
-  console.log(user.picture);
-
   return (
     <>
       {/* Personal Information */}

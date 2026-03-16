@@ -43,7 +43,7 @@ export const SellPostCard = ({ sellPost }: Props) => {
     price,
     username,
     userPicture,
-    whatsappLink,
+    phoneNumber,
     shopName,
     shopDescription,
     registeredAt,
@@ -56,7 +56,7 @@ export const SellPostCard = ({ sellPost }: Props) => {
   });
 
   const [shopModalOpen, setShopModalOpen] = useState<boolean>(false);
-  const isShop = whatsappLink && shopName;
+  const isShop = phoneNumber && shopName;
 
   return (
     <div
@@ -122,7 +122,7 @@ export const SellPostCard = ({ sellPost }: Props) => {
               "cursor-pointer transition-all hover:scale-[1.05] active:scale-100"
             }
             onClick={() => {
-              window.open(createWhatsappLink(whatsappLink!));
+              window.open(createWhatsappLink(phoneNumber!));
             }}
           >
             <ShoppingBag />
@@ -174,7 +174,7 @@ export const SellPostCard = ({ sellPost }: Props) => {
                 shopDescription={shopDescription}
                 username={username}
                 userPicture={userPicture}
-                whatsappLink={whatsappLink}
+                phoneNumber={phoneNumber}
               />
             </div>
           )}

@@ -39,5 +39,5 @@ func (c *usersController) Shop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	utils.WriteResponse(w, http.StatusCreated, nil, "Tienda creada exitosamente !")
+	utils.WriteResponse(w, http.StatusCreated, nil, "Información guardada exitosamente !")
 }

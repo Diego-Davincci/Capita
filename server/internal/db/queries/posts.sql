@@ -22,7 +22,7 @@ SELECT
   p.category,
   p.photo_url       AS "postPhotoURL",
   p.registered_at   AS "registeredAt",
-  s.whatsapp_link	  AS "whatsappLink",
+  s.phone_number	  AS "phoneNumber",
   s.name            AS "shopName",
   s.description     AS "shopDescription"
 FROM posts p

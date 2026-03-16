@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { findFieldError, type FormFieldValidation } from "@/lib/utils";
 import type { ShopDetails } from "../types";
+import { Separator } from "@/components/ui/separator";
 
 type Props = {
   shopDetails: ShopDetails;
@@ -44,11 +45,47 @@ export const ShopInformationForm = ({
 }: Props) => {
   return (
     <div>
-      <h3 className="flex items-center gap-x-2 text-xl font-semibold mb-7">
-        <Store className="size-6 text-primary" />
-        Mi Emprendimiento o Tienda
-      </h3>
       <form className="w-full flex flex-col gap-y-7" onSubmit={onSubmit}>
+        {/* Phone number - required */}
+        <div className="flex flex-col gap-y-3">
+          <Label
+            htmlFor="phone-number"
+            className="text-violet-200/70 font-semibold"
+          >
+            <MessageCircle className="size-5 text-green-400" />
+            Número de WhatsApp
+          </Label>
+          <div className="space-y-1 flex flex-col">
+            <Input
+              id="phone-number"
+              placeholder="3105005517"
+              inputMode="numeric"
+              maxLength={10}
+              value={shopDetails.phoneNumber}
+              onChange={onChangeWhatsapp}
+              disabled={isPending}
+            />
+            <span className="text-xs text-muted-foreground">
+              Necesario para publicar en Cápita. Los compradores te contactarán
+              aquí.
+            </span>
+            {/* error span */}
+            {findFieldError("name", errors) && (
+              <span className="text-sm text-destructive">
+                {findFieldError("name", errors)!.message}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Optional shop section */}
+
+        <h3 className="flex items-center gap-x-2 text-xl font-semibold mb-7">
+          <Store className="size-6 text-primary" />
+          Mi Emprendimiento o Tienda - Opcional !
+        </h3>
         {/* Shop name */}
         <div className="flex flex-col gap-y-3">
           <Label
@@ -88,35 +125,6 @@ export const ShopInformationForm = ({
             onChange={onChangeDescription}
             disabled={isPending}
           />
-        </div>
-        {/* Whatsapp link */}
-        <div className="flex flex-col gap-y-3">
-          <Label
-            htmlFor="shop-link"
-            className="text-violet-200/70 font-semibold"
-          >
-            <MessageCircle className="size-5 text-green-400" />
-            Link de WhatsApp
-          </Label>
-          <div className="space-y-1">
-            <Input
-              id="shop-link"
-              placeholder="3105005517"
-              inputMode="numeric"
-              maxLength={10}
-              value={shopDetails.whatsappLink}
-              onChange={onChangeWhatsapp}
-              disabled={isPending}
-            />
-            <span className="text-xs text-muted-foreground">
-              L@s comprador@s podrán contactarte directamente por WhatsApp
-            </span>
-            {findFieldError("whatsappLink", errors) && (
-              <span className="text-sm text-destructive block">
-                {findFieldError("whatsappLink", errors)!.message}
-              </span>
-            )}
-          </div>
         </div>
         <Button
           type="submit"

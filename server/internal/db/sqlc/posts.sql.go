@@ -48,7 +48,7 @@ SELECT
   p.category,
   p.photo_url       AS "postPhotoURL",
   p.registered_at   AS "registeredAt",
-  s.whatsapp_link	  AS "whatsappLink",
+  s.phone_number	  AS "phoneNumber",
   s.name            AS "shopName",
   s.description     AS "shopDescription"
 FROM posts p
@@ -75,7 +75,7 @@ type GetFeedPostsRow struct {
 	Category        string             `json:"category"`
 	PostPhotoURL    string             `json:"postPhotoURL"`
 	RegisteredAt    pgtype.Timestamptz `json:"registeredAt"`
-	WhatsappLink    pgtype.Text        `json:"whatsappLink"`
+	PhoneNumber     pgtype.Text        `json:"phoneNumber"`
 	ShopName        pgtype.Text        `json:"shopName"`
 	ShopDescription pgtype.Text        `json:"shopDescription"`
 }
@@ -104,7 +104,7 @@ func (q *Queries) GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]G
 			&i.Category,
 			&i.PostPhotoURL,
 			&i.RegisteredAt,
-			&i.WhatsappLink,
+			&i.PhoneNumber,
 			&i.ShopName,
 			&i.ShopDescription,
 		); err != nil {
