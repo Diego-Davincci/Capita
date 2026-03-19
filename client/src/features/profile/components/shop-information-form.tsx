@@ -70,9 +70,9 @@ export const ShopInformationForm = ({
               aquí.
             </span>
             {/* error span */}
-            {findFieldError("name", errors) && (
+            {findFieldError("phoneNumber", errors) && (
               <span className="text-sm text-destructive">
-                {findFieldError("name", errors)!.message}
+                {findFieldError("phoneNumber", errors)!.message}
               </span>
             )}
           </div>
@@ -82,7 +82,7 @@ export const ShopInformationForm = ({
 
         {/* Optional shop section */}
 
-        <h3 className="flex items-center gap-x-2 text-xl font-semibold mb-7">
+        <h3 className="flex items-center gap-x-2 text-xl font-semibold">
           <Store className="size-6 text-primary" />
           Mi Emprendimiento o Tienda - Opcional !
         </h3>

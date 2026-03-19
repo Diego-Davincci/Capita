@@ -33,6 +33,17 @@ func (c *usersController) Shop(w http.ResponseWriter, r *http.Request) {
 	payload := r.Context().Value(middleware.BodyCtxKey).(CreateShopPayload)
 	userID := r.Context().Value(utils.UserContextKey).(int64)
 
+	// You can not provide a shop description without a name for the shop
+	if payload.Description != "" && payload.Name == "" {
+		utils.WriteResponse(w, http.StatusBadRequest,
+			[]utils.CustomValidationError{{
+				Field:   "name",
+				Message: "Necesitas un nombre de tienda para agregar una descripción",
+			}},
+			utils.ErrBadRequest.Error(),
+		)
+	}
+
 	if err := c.service.CreateShop(r.Context(), userID, payload); err != nil {
 		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
 		log.Println(err)
