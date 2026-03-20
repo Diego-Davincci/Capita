@@ -20,17 +20,28 @@ export const sellPostSchema = z.object({
 export type SellPost = z.infer<typeof sellPostSchema>;
 
 export interface FeedPosts {
-  username: string;
-  userPicture: string;
   postID: number;
   userID: number;
+  title: string;
+  description: string | null;
+  price: number;
+  postPhotoURL: string;
+  registeredAt: Date;
+  category: string;
+  username: string;
+  userPicture: string;
+  phoneNumber?: string | null;
+  shopName?: string | null;
+  shopDescription?: string | null;
+}
+
+export interface SellPostRsp {
+  userID: number;
+  postID: number;
   title: string;
   description: string | null;
   price: number;
   category: string;
   postPhotoURL: string;
   registeredAt: Date;
-  phoneNumber?: string | null;
-  shopName?: string | null;
-  shopDescription?: string | null;
 }

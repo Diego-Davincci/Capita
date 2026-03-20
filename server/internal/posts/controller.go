@@ -44,14 +44,14 @@ func (c *postsController) HandlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create post
-	err = c.service.CreatePost(ctx, userID, fileUrl, *payload)
+	post, err := c.service.CreatePost(ctx, userID, fileUrl, *payload)
 	if err != nil {
 		log.Println(err)
 		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
 		return
 	}
 
-	utils.WriteResponse(w, http.StatusCreated, nil, "")
+	utils.WriteResponse(w, http.StatusCreated, post, "")
 }
 
 func (c *postsController) GetAllPosts(w http.ResponseWriter, r *http.Request) {

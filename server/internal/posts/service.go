@@ -14,7 +14,7 @@ import (
 
 type Service interface {
 	ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error)
-	CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (err error)
+	CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (newPost repo.CreatePostRow, err error)
 	GetPosts(ctx context.Context, categoryParam string) (posts []repo.GetFeedPostsRow, err error)
 }
 
@@ -78,7 +78,7 @@ func (s *postsService) ValidatePayload(r *http.Request) (payload *CreatePostPayl
 	return
 }
 
-func (s *postsService) CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (err error) {
+func (s *postsService) CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (newPost repo.CreatePostRow, err error) {
 
 	// Does post description contains actual characters ? In case not, set Valid to false (meaning null in postgres)
 	postDescription := pgtype.Text{String: payload.Description, Valid: true}
@@ -87,14 +87,13 @@ func (s *postsService) CreatePost(ctx context.Context, userID int64, photoUrl st
 	}
 
 	createPostParams := repo.CreatePostParams{UserID: userID, Title: payload.Title, Description: postDescription, Price: payload.Price, Category: payload.Category, PhotoUrl: photoUrl}
-	postErr := s.repo.CreatePost(ctx, createPostParams)
+	newPost, postErr := s.repo.CreatePost(ctx, createPostParams)
 	if postErr != nil {
 		err = fmt.Errorf("failed to create a new post : %w", postErr)
 		return
 	}
 
-	return nil
-
+	return
 }
 
 type GetPostsQueries struct {

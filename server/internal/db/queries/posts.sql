@@ -1,5 +1,7 @@
--- name: CreatePost :exec
-INSERT INTO posts (user_id, title, description, price, category, photo_url) VALUES ($1, $2, $3, $4, $5, $6);
+-- name: CreatePost :one
+INSERT INTO posts (user_id, title, description, price, category, photo_url) 
+VALUES ($1, $2, $3, $4, $5, $6) 
+RETURNING user_id, post_id, title, description, price, category, photo_url, registered_at;
 
 -- name: GetPosts :many
 SELECT u.username as "username", u.picture "userPicture", p.post_id as "postID", p.user_id as "userID", p.title, p.description, p.price, p.category, 

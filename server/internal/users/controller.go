@@ -35,6 +35,7 @@ func (c *usersController) Shop(w http.ResponseWriter, r *http.Request) {
 
 	// You can not provide a shop description without a name for the shop
 	if payload.Description != "" && payload.Name == "" {
+		log.Println("Only description was provided, no shop name")
 		utils.WriteResponse(w, http.StatusBadRequest,
 			[]utils.CustomValidationError{{
 				Field:   "name",
@@ -42,11 +43,12 @@ func (c *usersController) Shop(w http.ResponseWriter, r *http.Request) {
 			}},
 			utils.ErrBadRequest.Error(),
 		)
+		return
 	}
 
 	if err := c.service.CreateShop(r.Context(), userID, payload); err != nil {
-		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
 		log.Println(err)
+		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
 		return
 	}
 

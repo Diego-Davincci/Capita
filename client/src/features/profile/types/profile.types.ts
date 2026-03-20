@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+export const phoneSchema = z.object({
+  phoneNumber: z
+    .string()
+    .min(1, {
+      error:
+        "Introduce un número de WhatsApp válido (solo dígitos, 10 caracteres)",
+    })
+    .length(10, { error: "El número introducido no posee 10 caracteres" }),
+});
+
+export type PhoneForm = z.infer<typeof phoneSchema>;
+
 export const shopDetailsSchema = z
   .object({
     name: z
@@ -7,13 +19,6 @@ export const shopDetailsSchema = z
       .max(50, { error: "Nombre de la tienda máximo 50 caracteres" })
       .optional(),
     description: z.string().optional(),
-    phoneNumber: z
-      .string()
-      .min(1, {
-        error:
-          "Introduce un número de WhatsApp válido (solo dígitos, 10 caracteres)",
-      })
-      .length(10, { error: "El número introducido no posee 10 caracteres" }),
   })
   .superRefine((data, ctx) => {
     if (
@@ -31,3 +36,10 @@ export const shopDetailsSchema = z
   });
 
 export type ShopDetails = z.infer<typeof shopDetailsSchema>;
+
+/** Payload shape expected by POST /users/me/shop (all fields required for the upsert). */
+export type ShopPayload = {
+  phoneNumber: string;
+  name: string;
+  description: string;
+};

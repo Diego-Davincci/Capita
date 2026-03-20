@@ -11,8 +11,10 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createPost = `-- name: CreatePost :exec
-INSERT INTO posts (user_id, title, description, price, category, photo_url) VALUES ($1, $2, $3, $4, $5, $6)
+const createPost = `-- name: CreatePost :one
+INSERT INTO posts (user_id, title, description, price, category, photo_url) 
+VALUES ($1, $2, $3, $4, $5, $6) 
+RETURNING user_id, post_id, title, description, price, category, photo_url, registered_at
 `
 
 type CreatePostParams struct {
@@ -24,8 +26,19 @@ type CreatePostParams struct {
 	PhotoUrl    string      `json:"photo_url"`
 }
 
-func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
-	_, err := q.db.Exec(ctx, createPost,
+type CreatePostRow struct {
+	UserID       int64              `json:"userID"`
+	PostID       int64              `json:"postID"`
+	Title        string             `json:"title"`
+	Description  pgtype.Text        `json:"description"`
+	Price        int64              `json:"price"`
+	Category     string             `json:"category"`
+	PhotoUrl     string             `json:"postPhotoURL"`
+	RegisteredAt pgtype.Timestamptz `json:"registeredAt"`
+}
+
+func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (CreatePostRow, error) {
+	row := q.db.QueryRow(ctx, createPost,
 		arg.UserID,
 		arg.Title,
 		arg.Description,
@@ -33,7 +46,18 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
 		arg.Category,
 		arg.PhotoUrl,
 	)
-	return err
+	var i CreatePostRow
+	err := row.Scan(
+		&i.UserID,
+		&i.PostID,
+		&i.Title,
+		&i.Description,
+		&i.Price,
+		&i.Category,
+		&i.PhotoUrl,
+		&i.RegisteredAt,
+	)
+	return i, err
 }
 
 const getFeedPosts = `-- name: GetFeedPosts :many

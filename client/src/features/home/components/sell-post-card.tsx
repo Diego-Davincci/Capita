@@ -13,7 +13,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import type { FeedPosts } from "../types";
-import { use, useState } from "react";
+import { useState } from "react";
 import { ShopModal } from "./shop-modal";
 
 type Props = {
@@ -66,7 +66,7 @@ export const SellPostCard = ({ sellPost }: Props) => {
       {/* Image */}
       <div className="relative h-80 overflow-hidden">
         <img
-          className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
+          className="w-full h-full object-contain group-hover:scale-105 transition-all duration-500"
           src={postPhotoURL}
         />
 

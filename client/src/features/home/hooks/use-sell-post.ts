@@ -1,7 +1,7 @@
 import { useApiMutation } from "@/hooks";
-import type { SellPost } from "../types";
-import type { ApiRsp } from "@/types";
+import type { FeedPosts, SellPost, SellPostRsp } from "../types";
 import { API_URL } from "@/lib/utils";
+import { useStore } from "@/store";
 
 type Props = {
   payload: SellPost;
@@ -20,15 +20,34 @@ type Props = {
  * 5. Does not call mutate if mutateSellPost is not invoked
  */
 export const useSellPost = ({ payload, onSuccess }: Props) => {
-  const { data, isPending, mutate } = useApiMutation<
-    FormData,
-    ApiRsp<undefined>
-  >({
+  const queryKey = [`feed-category`];
+  const user = useStore((store) => store.user);
+
+  const { data, isPending, mutate } = useApiMutation<FormData, SellPostRsp>({
     method: "POST",
     url: `${API_URL}/posts`,
     formData: true,
     onSuccessFn: () => {
       onSuccess();
+    },
+    updateCache: {
+      queryKey,
+      updater: (oldData, rsp, _) => {
+        const newPost: FeedPosts = {
+          ...rsp,
+          username: user.username,
+          userPicture: user.picture,
+          phoneNumber: user.phoneNumber,
+          shopName: user.shopName,
+          shopDescription: user.shopDescription,
+        };
+
+        let currentHomeFeedData = oldData as FeedPosts[];
+
+        currentHomeFeedData = [{ ...newPost }, ...oldData];
+
+        return currentHomeFeedData;
+      },
     },
   });
 

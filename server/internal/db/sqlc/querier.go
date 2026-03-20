@@ -9,7 +9,7 @@ import (
 )
 
 type Querier interface {
-	CreatePost(ctx context.Context, arg CreatePostParams) error
+	CreatePost(ctx context.Context, arg CreatePostParams) (CreatePostRow, error)
 	CreateShop(ctx context.Context, arg CreateShopParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	// Returns posts ordered by a recency-biased random score.
