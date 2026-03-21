@@ -30,6 +30,14 @@ SELECT
 FROM posts p
 LEFT JOIN users u ON u.user_id = p.user_id
 LEFT JOIN shop s on s.user_id = p.user_id 
-WHERE (sqlc.arg(category)::text = '' OR p.category = sqlc.arg(category)::text)
+WHERE (sqlc.arg(category)::text = '' OR p.category ILIKE sqlc.arg(category)::text)
+AND (
+  sqlc.arg(search)::text = '' 
+  OR p.title ILIKE '%' || sqlc.arg(search)::text || '%'
+  OR p.description  ILIKE '%' || sqlc.arg(search)::text || '%'
+  OR u.username     ILIKE '%' || sqlc.arg(search)::text || '%'
+  OR s.name         ILIKE '%' || sqlc.arg(search)::text || '%'
+)
 ORDER BY RANDOM() * POW(0.5, EXTRACT(EPOCH FROM NOW() - p.registered_at) / 604800.0) DESC
-LIMIT sqlc.arg(max);
+LIMIT 9
+OFFSET sqlc.arg(page)::int * 9;

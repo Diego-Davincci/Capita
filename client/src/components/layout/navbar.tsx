@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate, useSearch } from "@tanstack/react-router";
 
 import { useStore } from "@/store";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,13 +8,15 @@ import { Search, Store } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SellPostModal } from "@/features/home/components";
+import { useDebounce } from "@/hooks";
 
 export const Navbar = () => {
   const location = useLocation();
-  const pathNotHome = location.href !== "/";
-
+  const { q } = useSearch({ from: "/_authenticated/_layout/" });
   const navigate = useNavigate();
   const user = useStore((store) => store.user);
+
+  const pathNotHome = location.pathname !== "/";
 
   const [highlightAnimation, setHighlightAnimation] = useState<boolean>(false);
   useEffect(() => {
@@ -22,7 +24,31 @@ export const Navbar = () => {
   }, []);
 
   const [open, setOpen] = useState<boolean>(false);
+
   // TODO: responsive navbar
+
+  // Search input state
+  const [inputValue, setInputValue] = useState(q ?? "");
+  const debouncedSearch = useDebounce<string>(inputValue, 400);
+
+  // Sync URL -> local state when user navigates back and forward
+  useEffect(() => {
+    setInputValue(q ?? "");
+  }, [q]);
+
+  // When debounced value settles, update URL
+  useEffect(() => {
+    // Only navigate if we're on home or the user is actively typing
+    navigate({
+      to: "/",
+      search: (prev) => ({
+        ...prev,
+        q: debouncedSearch || undefined,
+        page: undefined, // reset pagination on new search
+      }),
+      replace: true,
+    });
+  }, [debouncedSearch, navigate]);
 
   return (
     <header className="w-[95%] m-auto border sticky top-2 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e]/80 backdrop-blur-xl z-50 rounded-3xl max-w-7xl">
@@ -58,6 +84,10 @@ export const Navbar = () => {
               className="border-primary/70 pl-10 hover:shadow-md hover:shadow-primary/40 transition-all focus:border-primary/50! focus:ring-primary/50!"
               placeholder="Busca subcripciones de streaming, auriculares, productos..."
               disabled={pathNotHome}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              maxLength={100}
+              aria-label="Buscar publicaciones"
             />
           </div>
         </div>

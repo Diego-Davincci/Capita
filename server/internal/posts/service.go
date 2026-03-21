@@ -15,7 +15,7 @@ import (
 type Service interface {
 	ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error)
 	CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (newPost repo.CreatePostRow, err error)
-	GetPosts(ctx context.Context, categoryParam string) (posts []repo.GetFeedPostsRow, err error)
+	GetPosts(ctx context.Context, category, search string, page int) (posts []repo.GetFeedPostsRow, err error)
 }
 
 type postsService struct {
@@ -98,13 +98,19 @@ func (s *postsService) CreatePost(ctx context.Context, userID int64, photoUrl st
 
 type GetPostsQueries struct {
 	Category string `json:"category" validate:"omitempty"`
+	Search   string `json:"search" validate:"omitempty,max=100"`
+	Page     int    `json:"page" validate:"omitempty,min=0"`
 }
 
 // GetPosts fetches a feed of posts ordered by a recency-biased random score
 // and ensures no two consecutive posts share the same category.
-func (s *postsService) GetPosts(ctx context.Context, categoryParam string) (posts []repo.GetFeedPostsRow, err error) {
+func (s *postsService) GetPosts(ctx context.Context, category, search string, page int) (posts []repo.GetFeedPostsRow, err error) {
 
-	posts, getPostsErr := s.repo.GetFeedPosts(ctx, repo.GetFeedPostsParams{Category: categoryParam, Max: 20})
+	posts, getPostsErr := s.repo.GetFeedPosts(ctx,
+		repo.GetFeedPostsParams{
+			Category: category,
+			Search:   search,
+			Page:     int32(page)})
 	if getPostsErr != nil {
 		err = fmt.Errorf("failed to get posts : %w", getPostsErr)
 		return

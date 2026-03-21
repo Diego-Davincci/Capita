@@ -31,11 +31,21 @@ export const FeedCategoryFilter = ({ activeCategory }: Props) => {
             "cursor-pointer hover:scale-105 hover:text-violet-400 transition-all hover:border hover:border-primary/70 px-5 hover:bg-input/40",
             {
               "text-violet-400 border-primary hover:text-violet-400 hover:border-primary hover:bg-input/30":
-                activeCategory && activeCategory === name.toLowerCase(),
+                activeCategory
+                  ? activeCategory === name.toLowerCase()
+                  : name.toLowerCase() === "todo",
             },
           )}
           onClick={() =>
-            navigate({ to: "/", search: { category: name.toLowerCase() } })
+            navigate({
+              to: "/",
+              search: {
+                category:
+                  name.toLowerCase() === "todo"
+                    ? undefined
+                    : name.toLowerCase(),
+              },
+            })
           }
         >
           <Icon />

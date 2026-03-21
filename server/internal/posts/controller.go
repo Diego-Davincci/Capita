@@ -59,7 +59,7 @@ func (c *postsController) GetAllPosts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	params := r.Context().Value(middleware.QueryCtxKey).(GetPostsQueries)
 
-	posts, err := c.service.GetPosts(ctx, params.Category)
+	posts, err := c.service.GetPosts(ctx, params.Category, params.Search, params.Page)
 	if err != nil {
 		log.Println(err)
 		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())

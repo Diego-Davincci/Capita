@@ -27,14 +27,14 @@ type CreatePostParams struct {
 }
 
 type CreatePostRow struct {
-	UserID       int64              `json:"userID"`
-	PostID       int64              `json:"postID"`
+	UserID       int64              `json:"user_id"`
+	PostID       int64              `json:"post_id"`
 	Title        string             `json:"title"`
 	Description  pgtype.Text        `json:"description"`
 	Price        int64              `json:"price"`
 	Category     string             `json:"category"`
-	PhotoUrl     string             `json:"postPhotoURL"`
-	RegisteredAt pgtype.Timestamptz `json:"registeredAt"`
+	PhotoUrl     string             `json:"photo_url"`
+	RegisteredAt pgtype.Timestamptz `json:"registered_at"`
 }
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (CreatePostRow, error) {
@@ -78,14 +78,23 @@ SELECT
 FROM posts p
 LEFT JOIN users u ON u.user_id = p.user_id
 LEFT JOIN shop s on s.user_id = p.user_id 
-WHERE ($1::text = '' OR p.category = $1::text)
+WHERE ($1::text = '' OR p.category ILIKE $1::text)
+AND (
+  $2::text = '' 
+  OR p.title ILIKE '%' || $2::text || '%'
+  OR p.description  ILIKE '%' || $2::text || '%'
+  OR u.username     ILIKE '%' || $2::text || '%'
+  OR s.name         ILIKE '%' || $2::text || '%'
+)
 ORDER BY RANDOM() * POW(0.5, EXTRACT(EPOCH FROM NOW() - p.registered_at) / 604800.0) DESC
-LIMIT $2
+LIMIT 9
+OFFSET $3::int * 9
 `
 
 type GetFeedPostsParams struct {
 	Category string `json:"category"`
-	Max      int32  `json:"max"`
+	Search   string `json:"search"`
+	Page     int32  `json:"page"`
 }
 
 type GetFeedPostsRow struct {
@@ -109,7 +118,7 @@ type GetFeedPostsRow struct {
 // score = RANDOM() × 0.5^(age_in_weeks), half-life = 7 days.
 // Pass an empty string for category to return all categories.
 func (q *Queries) GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]GetFeedPostsRow, error) {
-	rows, err := q.db.Query(ctx, getFeedPosts, arg.Category, arg.Max)
+	rows, err := q.db.Query(ctx, getFeedPosts, arg.Category, arg.Search, arg.Page)
 	if err != nil {
 		return nil, err
 	}
