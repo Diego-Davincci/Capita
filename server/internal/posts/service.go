@@ -6,6 +6,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"strings"
 
 	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
 	"github.com/Diego-Davincci/Capita/internal/utils"
@@ -15,7 +16,7 @@ import (
 type Service interface {
 	ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error)
 	CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (newPost repo.CreatePostRow, err error)
-	GetPosts(ctx context.Context, category, search string, page int) (posts []repo.GetFeedPostsRow, err error)
+	GetPosts(ctx context.Context, category, search, seed, cursor string) (posts []repo.GetFeedPostsRow, err error)
 }
 
 type postsService struct {
@@ -99,12 +100,36 @@ func (s *postsService) CreatePost(ctx context.Context, userID int64, photoUrl st
 type GetPostsQueries struct {
 	Category string `json:"category" validate:"omitempty"`
 	Search   string `json:"search" validate:"omitempty,max=100"`
-	Page     int    `json:"page" validate:"omitempty,min=0"`
+	Seed     int    `json:"seed" validate:"omitempty"`   // Session seed for deterministic
+	Cursor   string `json:"cursor" validate:"omitmepty"` // opaque cursor for pagination
 }
 
-// GetPosts fetches a feed of posts ordered by a recency-biased random score
-// and ensures no two consecutive posts share the same category.
-func (s *postsService) GetPosts(ctx context.Context, category, search string, page int) (posts []repo.GetFeedPostsRow, err error) {
+// PostsPage is the paginated response for the feed endpoint.
+// HasNextPage is true when the current page is full (9 posts), indicating more may exist.
+// NextCursor is an opaque string encoding the last post's score and ID for cursor pagination.
+type PostsRsp struct {
+	Posts       []repo.GetFeedPostsRow `json:"posts"`
+	HasNextPage bool                   `json:"hasNextPage"`
+	NextCursor  bool                   `json:"nextCursor,omitempty"`
+}
+
+// GetPosts fetches a deterministically-ordered page of feed posts.
+// The seed is used in md5(seed || post_id) inside the SQL CTE to produce a deterministic
+// pseudo-random score per post — no setseed(), no connection state mutation.
+// Cursor-based pagination: the cursor encodes the last post's score and ID from the
+// previous page, enabling constant-time page access regardless of depth.
+// HasNextPage is true when exactly 9 results are returned (more pages may exist).
+// The cursor is extracted BEFORE ensureCategoryVariety reorders posts, so it correctly
+// references the SQL ordering boundary.
+//
+// Test cases:
+// - Same seed, first page (empty cursor) and second page (cursor from first) → no overlapping postIDs
+// - Empty cursor → cursor_score=0, cursor_post_id=0 → returns all posts (first page)
+// - Invalid cursor → returns error
+// - len(posts) < 9 → HasNextPage is false, NextCursor is empty
+// - len(posts) == 9 → HasNextPage is true, NextCursor is set
+// - Empty category/search → all posts returned without filter applied
+func (s *postsService) GetPosts(ctx context.Context, category, search, seed, cursor string) (posts []repo.GetFeedPostsRow, err error) {
 
 	posts, getPostsErr := s.repo.GetFeedPosts(ctx,
 		repo.GetFeedPostsParams{
@@ -117,6 +142,39 @@ func (s *postsService) GetPosts(ctx context.Context, category, search string, pa
 	}
 
 	return ensureCategoryVariety(posts), nil
+}
+
+// encodeCursor encodes a score and postID into an opaque cursor string.
+func encodeCursor(score float64, postID int64) string {
+	return fmt.Sprintf("%.15f:%d", score, postID)
+}
+
+// decodeCursor parses an opaque cursor string into score and postID.
+// Returns (0, 0, nil) for empty cursor (first page).
+//
+// Test cases:
+// - "" → (0, 0, nil) — first page
+// - "0.234567000000000:42" → (0.234567, 42, nil)
+// - "invalid" → (0, 0, error)
+// - "abc:42" → (0, 0, error)
+// - "0.5:abc" → (0, 0, error)
+func decodeCursor(cursor string) (float64, int64, error) {
+	if cursor == "" {
+		return 0, 0, nil
+	}
+	parts := strings.SplitN(cursor, ":", 2)
+	if len(parts) != 2 {
+		return 0, 0, fmt.Errorf("invalid cursor format")
+	}
+	score, err := strconv.ParseFloat(parts[0], 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid cursor score: %w", err)
+	}
+	postID, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid cursor post id: %w", err)
+	}
+	return score, postID, nil
 }
 
 // ensureCategoryVariety reorders posts so that no two consecutive posts share

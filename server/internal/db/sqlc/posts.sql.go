@@ -61,40 +61,51 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (CreateP
 }
 
 const getFeedPosts = `-- name: GetFeedPosts :many
-SELECT
-  u.username        AS "username",
-  u.picture         AS "userPicture",
-  p.post_id         AS "postID",
-  p.user_id         AS "userID",
-  p.title,
-  p.description,
-  p.price,
-  p.category,
-  p.photo_url       AS "postPhotoURL",
-  p.registered_at   AS "registeredAt",
-  s.phone_number	  AS "phoneNumber",
-  s.name            AS "shopName",
-  s.description     AS "shopDescription"
-FROM posts p
-LEFT JOIN users u ON u.user_id = p.user_id
-LEFT JOIN shop s on s.user_id = p.user_id 
-WHERE ($1::text = '' OR p.category ILIKE $1::text)
-AND (
-  $2::text = '' 
-  OR p.title ILIKE '%' || $2::text || '%'
-  OR p.description  ILIKE '%' || $2::text || '%'
-  OR u.username     ILIKE '%' || $2::text || '%'
-  OR s.name         ILIKE '%' || $2::text || '%'
+WITH scored_posts AS (
+  SELECT
+    u.username        AS "username",
+    u.picture         AS "userPicture",
+    p.post_id         AS "postID",
+    p.user_id         AS "userID",
+    p.title,
+    p.description,
+    p.price,
+    p.category,
+    p.photo_url       AS "postPhotoURL",
+    p.registered_at   AS "registeredAt",
+    s.phone_number    AS "phoneNumber",
+    s.name            AS "shopName",
+    s.description     AS "shopDescription",
+    (('x' || substr(md5($3::text || p.post_id::text), 1, 8))::bit(32)::bigint & 2147483647)::float8 / 2147483647.0
+      * POW(0.5, EXTRACT(EPOCH FROM NOW() - p.registered_at) / 604800.0) AS score
+  FROM posts p
+  LEFT JOIN users u ON u.user_id = p.user_id
+  LEFT JOIN shop s ON s.user_id = p.user_id
+  WHERE ($4::text = '' OR p.category ILIKE $4::text)
+  AND (
+    $5::text = ''
+    OR p.title       ILIKE '%' || $5::text || '%'
+    OR p.description ILIKE '%' || $5::text || '%'
+    OR u.username    ILIKE '%' || $5::text || '%'
+    OR s.name        ILIKE '%' || $5::text || '%'
+  )
 )
-ORDER BY RANDOM() * POW(0.5, EXTRACT(EPOCH FROM NOW() - p.registered_at) / 604800.0) DESC
+SELECT "username", "userPicture", "postID", "userID", title, description, price, category,
+       "postPhotoURL", "registeredAt", "phoneNumber", "shopName", "shopDescription", score
+FROM scored_posts
+WHERE ($1::float8 = 0 AND $2::bigint = 0)
+   OR score < $1::float8
+   OR (score = $1::float8 AND "postID" > $2::bigint)
+ORDER BY score DESC, "postID" ASC
 LIMIT 9
-OFFSET $3::int * 9
 `
 
 type GetFeedPostsParams struct {
-	Category string `json:"category"`
-	Search   string `json:"search"`
-	Page     int32  `json:"page"`
+	CursorScore  float64 `json:"cursor_score"`
+	CursorPostID int64   `json:"cursor_post_id"`
+	Seed         string  `json:"seed"`
+	Category     string  `json:"category"`
+	Search       string  `json:"search"`
 }
 
 type GetFeedPostsRow struct {
@@ -111,14 +122,25 @@ type GetFeedPostsRow struct {
 	PhoneNumber     pgtype.Text        `json:"phoneNumber"`
 	ShopName        pgtype.Text        `json:"shopName"`
 	ShopDescription pgtype.Text        `json:"shopDescription"`
+	Score           int32              `json:"score"`
 }
 
-// Returns posts ordered by a recency-biased random score.
-// Newer posts have a higher expected score but older ones can still surface.
-// score = RANDOM() × 0.5^(age_in_weeks), half-life = 7 days.
-// Pass an empty string for category to return all categories.
+// Returns posts ordered by a deterministic recency-biased score.
+// Uses md5(seed || post_id) for deterministic pseudo-random ordering — pure function,
+// no connection state mutation (unlike setseed).
+// Accepts a text seed generated client-side per browsing session.
+// score = md5_hash_as_float × 0.5^(age_in_weeks), half-life = 7 days.
+// Cursor-based pagination: pass cursor_score=0 and cursor_post_id=0 for the first page.
+// For subsequent pages, pass the score and postID of the last post from the previous page.
+// Pass an empty string for category/search to skip those filters.
 func (q *Queries) GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]GetFeedPostsRow, error) {
-	rows, err := q.db.Query(ctx, getFeedPosts, arg.Category, arg.Search, arg.Page)
+	rows, err := q.db.Query(ctx, getFeedPosts,
+		arg.CursorScore,
+		arg.CursorPostID,
+		arg.Seed,
+		arg.Category,
+		arg.Search,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -140,6 +162,7 @@ func (q *Queries) GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]G
 			&i.PhoneNumber,
 			&i.ShopName,
 			&i.ShopDescription,
+			&i.Score,
 		); err != nil {
 			return nil, err
 		}

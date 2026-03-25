@@ -12,10 +12,14 @@ type Querier interface {
 	CreatePost(ctx context.Context, arg CreatePostParams) (CreatePostRow, error)
 	CreateShop(ctx context.Context, arg CreateShopParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	// Returns posts ordered by a recency-biased random score.
-	// Newer posts have a higher expected score but older ones can still surface.
-	// score = RANDOM() × 0.5^(age_in_weeks), half-life = 7 days.
-	// Pass an empty string for category to return all categories.
+	// Returns posts ordered by a deterministic recency-biased score.
+	// Uses md5(seed || post_id) for deterministic pseudo-random ordering — pure function,
+	// no connection state mutation (unlike setseed).
+	// Accepts a text seed generated client-side per browsing session.
+	// score = md5_hash_as_float × 0.5^(age_in_weeks), half-life = 7 days.
+	// Cursor-based pagination: pass cursor_score=0 and cursor_post_id=0 for the first page.
+	// For subsequent pages, pass the score and postID of the last post from the previous page.
+	// Pass an empty string for category/search to skip those filters.
 	GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]GetFeedPostsRow, error)
 	GetPosts(ctx context.Context) ([]GetPostsRow, error)
 	GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow, error)

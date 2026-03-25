@@ -39,12 +39,13 @@ export const FeedCategoryFilter = ({ activeCategory }: Props) => {
           onClick={() =>
             navigate({
               to: "/",
-              search: {
+              search: (prev) => ({
+                ...prev,
                 category:
                   name.toLowerCase() === "todo"
                     ? undefined
                     : name.toLowerCase(),
-              },
+              }),
             })
           }
         >

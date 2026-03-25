@@ -12,7 +12,7 @@ The server currently orders posts by a recency-biased random score (`RANDOM() * 
 - When the user scrolls within a threshold of the bottom (e.g. 300px), the next 9 posts are fetched automatically.
 - A lightweight loading indicator (spinner or skeleton row) appears at the bottom while the next page is being fetched.
 - When there are no more posts to load, the infinite scroll stops triggering and a subtle end-of-feed indicator is shown.
-- Existing category filtering (`?category=`) continues to work — changing the category resets the feed to page 1.
+- Existing category filtering (`?category=`) continues to work — changing the category resets the feed to page 1, should also work with the search input available in the navbar.
 - The feed preserves scroll position when the user navigates back from a post detail or modal.
 - The server exposes cursor-based pagination parameters: `limit` (default 9) and `cursor` (opaque string, omitted on first request).
 - The `ensureCategoryVariety()` reordering logic in the service layer continues to apply within each page.
@@ -42,9 +42,10 @@ The server currently orders posts by a recency-biased random score (`RANDOM() * 
 - The feed stops fetching when the server signals no more results (e.g. returns fewer than 9 posts or an explicit `hasNextPage: false`).
 - The server's `GET /posts` endpoint accepts `limit` and `cursor` query parameters and returns a `nextCursor` field alongside the posts array.
 - Performance: scrolling remains smooth with 50+ posts loaded (no jank or layout thrashing).
+- If a user creates a post, it should appear as the first posts, this must not break infinite scrolling
 
 ## Open Questions
 
-- **Cursor strategy:** Should the server use a DB-level approach (e.g. a session-scoped materialized ranking table or a seed-based `RANDOM(seed)`) vs. encoding the ranking in-memory? DB-level is more robust but adds complexity. A `setseed()`-based approach in PostgreSQL could make `RANDOM()` deterministic per session without extra tables.
-- **Virtualization decision:** Should we commit to TanStack Virtual now or defer it until performance profiling shows it's needed? Given fixed-height cards and 9-per-page batches, virtualization may be premature.
-- **Page size:** 9 is proposed to fill a 3-column grid evenly. Should this be configurable or is 9 the final number?
+- **Cursor strategy:** Should the server use a DB-level approach (e.g. a session-scoped materialized ranking table or a seed-based `RANDOM(seed)`) vs. encoding the ranking in-memory? Let DB-level is more robust but adds complexity. A `setseed()`-based approach in PostgreSQL could make `RANDOM()` deterministic per session without extra tables 👉 Let's go with the approach that produces the least amount of complexity and keeps the feed alive.
+- **Virtualization decision:** Should we commit to TanStack Virtual now or defer it until performance profiling shows it's needed? Given fixed-height cards and 9-per-page batches, virtualization may be premature. 👉 Let's not add virtualization for now
+- **Page size:** 9 is proposed to fill a 3-column grid evenly. Should this be configurable or is 9 the final number? 👉 9 is the final number, but this should be updated easily if needed

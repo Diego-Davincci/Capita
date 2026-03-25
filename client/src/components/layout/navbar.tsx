@@ -12,7 +12,7 @@ import { useDebounce } from "@/hooks";
 
 export const Navbar = () => {
   const location = useLocation();
-  const { q } = useSearch({ from: "/_authenticated/_layout/" });
+  const { q } = useSearch({ strict: false });
   const navigate = useNavigate();
   const user = useStore((store) => store.user);
 
@@ -39,16 +39,17 @@ export const Navbar = () => {
   // When debounced value settles, update URL
   useEffect(() => {
     // Only navigate if we're on home or the user is actively typing
-    navigate({
-      to: "/",
-      search: (prev) => ({
-        ...prev,
-        q: debouncedSearch || undefined,
-        page: undefined, // reset pagination on new search
-      }),
-      replace: true,
-    });
-  }, [debouncedSearch, navigate]);
+    if (!pathNotHome) {
+      navigate({
+        to: "/",
+        search: (prev) => ({
+          ...prev,
+          q: debouncedSearch || undefined,
+          page: undefined, // reset pagination on new search
+        }),
+      });
+    }
+  }, [debouncedSearch, navigate, pathNotHome]);
 
   return (
     <header className="w-[95%] m-auto border sticky top-2 left-0 right-0 border-violet-500/20 h-17.5 bg-[#1a0b2e]/80 backdrop-blur-xl z-50 rounded-3xl max-w-7xl">
@@ -57,7 +58,7 @@ export const Navbar = () => {
         {/* Left */}
         <div
           className="flex items-center justify-center gap-x-2 cursor-pointer"
-          onClick={() => navigate({ to: "/" })}
+          onClick={() => navigate({ to: "/", search: (prev) => ({ ...prev }) })}
         >
           <div className="w-10 h-10 rounded-lg bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/50">
             <Store className="w-5 h-5" />
