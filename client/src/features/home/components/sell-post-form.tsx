@@ -76,15 +76,13 @@ export const SellPostForm = ({
     <form className="space-y-5" onSubmit={onSubmit}>
       {/* Upload Image */}
       <div className="space-y-4">
-        <Label htmlFor="create-post-image">
-          Foto del producto/servicio 📸
-        </Label>
+        <Label htmlFor="create-post-image">Foto del producto/servicio 📸</Label>
         <div className="space-y-0.5">
           {imagePreview ? (
             <div className="w-full h-80 rounded-2xl overflow-hidden relative">
               <img
                 src={imagePreview}
-                className="object-cover w-full h-full"
+                className="object-contain w-full h-full"
               />
               <Button
                 variant="secondary"

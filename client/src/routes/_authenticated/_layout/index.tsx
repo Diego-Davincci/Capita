@@ -5,7 +5,6 @@ import z from "zod";
 const homeParamsSchema = z.object({
   q: z.string().optional(),
   category: z.string().optional(),
-  page: z.number().positive().catch(1).optional(),
 });
 
 type HomeParams = z.infer<typeof homeParamsSchema>;

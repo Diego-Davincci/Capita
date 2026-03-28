@@ -14,6 +14,9 @@ LEFT JOIN users u on u.user_id = p.user_id;
 -- no connection state mutation (unlike setseed).
 -- Accepts a text seed generated client-side per browsing session.
 -- score = md5_hash_as_float × 0.5^(age_in_weeks), half-life = 7 days.
+-- Uses session_time (client-provided Unix epoch seconds) instead of NOW() so that
+-- scores are stable across all page requests in the same session — required for
+-- correct cursor-based pagination (time-varying scores break cursor boundaries).
 -- Cursor-based pagination: pass cursor_score=0 and cursor_post_id=0 for the first page.
 -- For subsequent pages, pass the score and postID of the last post from the previous page.
 -- Pass an empty string for category/search to skip those filters.
@@ -33,7 +36,7 @@ WITH scored_posts AS (
     s.name            AS "shopName",
     s.description     AS "shopDescription",
     (('x' || substr(md5(sqlc.arg(seed)::text || p.post_id::text), 1, 8))::bit(32)::bigint & 2147483647)::float8 / 2147483647.0
-      * POW(0.5, EXTRACT(EPOCH FROM NOW() - p.registered_at) / 604800.0) AS score
+      * POW(0.5, EXTRACT(EPOCH FROM to_timestamp(sqlc.arg(session_time)::float8) - p.registered_at) / 604800.0) AS score
   FROM posts p
   LEFT JOIN users u ON u.user_id = p.user_id
   LEFT JOIN shop s ON s.user_id = p.user_id
@@ -47,7 +50,7 @@ WITH scored_posts AS (
   )
 )
 SELECT "username", "userPicture", "postID", "userID", title, description, price, category,
-       "postPhotoURL", "registeredAt", "phoneNumber", "shopName", "shopDescription", score
+       "postPhotoURL", "registeredAt", "phoneNumber", "shopName", "shopDescription", score::float8
 FROM scored_posts
 WHERE (sqlc.arg(cursor_score)::float8 = 0 AND sqlc.arg(cursor_post_id)::bigint = 0)
    OR score < sqlc.arg(cursor_score)::float8

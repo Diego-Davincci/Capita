@@ -1,7 +1,7 @@
 import { useApiMutation } from "@/hooks";
-import type { FeedPosts, SellPost, SellPostRsp } from "../types";
+import type { SellPost, SellPostRsp } from "../types";
 import { API_URL } from "@/lib/utils";
-import { useStore } from "@/store";
+import { FEED_QUERY_KEY } from "./use-feed-query";
 
 type Props = {
   payload: SellPost;
@@ -11,6 +11,8 @@ type Props = {
 /**
  * useSellPost — submits a new post to the feed via multipart/form-data.
  * Converts the SellPost JSON payload into FormData before sending to POST /posts.
+ * After a successful post, invalidates the feed query so the new post surfaces
+ * on the next refetch (high recency score).
  *
  * Test cases:
  * 1. Calls onSuccess callback after a successful POST response
@@ -18,11 +20,9 @@ type Props = {
  * 3. Optional description field is only appended when present
  * 4. isPending is true while the request is in-flight, false otherwise
  * 5. Does not call mutate if mutateSellPost is not invoked
+ * 6. Invalidates feed query on success so the new post appears in the feed
  */
 export const useSellPost = ({ payload, onSuccess }: Props) => {
-  const queryKey = [`feed-category`];
-  const user = useStore((store) => store.user);
-
   const { data, isPending, mutate } = useApiMutation<FormData, SellPostRsp>({
     method: "POST",
     url: `${API_URL}/posts`,
@@ -30,25 +30,7 @@ export const useSellPost = ({ payload, onSuccess }: Props) => {
     onSuccessFn: () => {
       onSuccess();
     },
-    updateCache: {
-      queryKey,
-      updater: (oldData, rsp, _) => {
-        const newPost: FeedPosts = {
-          ...rsp,
-          username: user.username,
-          userPicture: user.picture,
-          phoneNumber: user.phoneNumber,
-          shopName: user.shopName,
-          shopDescription: user.shopDescription,
-        };
-
-        let currentHomeFeedData = oldData as FeedPosts[];
-
-        currentHomeFeedData = [{ ...newPost }, ...oldData];
-
-        return currentHomeFeedData;
-      },
-    },
+    invalidateQueries: [[FEED_QUERY_KEY]],
   });
 
   const mutateSellPost = () => {

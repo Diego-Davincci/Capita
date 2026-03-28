@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/Diego-Davincci/Capita/internal/utils"
@@ -69,11 +70,13 @@ func ValidateQuery[T any](next http.Handler) http.Handler {
 		var params T
 
 		if err := queryDecoder.Decode(&params, r.URL.Query()); err != nil {
+			log.Println("decoding problem", err)
 			utils.WriteResponse(w, http.StatusBadRequest, nil, utils.ErrBadRequest.Error())
 			return
 		}
 
 		if fieldErrs := utils.ValidateData(params); fieldErrs != nil {
+			log.Println(fieldErrs)
 			utils.WriteResponse(w, http.StatusBadRequest, fieldErrs, utils.ErrBadRequest.Error())
 			return
 		}

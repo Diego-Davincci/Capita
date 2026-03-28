@@ -16,7 +16,7 @@ import (
 type Service interface {
 	ValidatePayload(r *http.Request) (payload *CreatePostPayload, mediaFile multipart.File, validationErrs []utils.CustomValidationError, err error)
 	CreatePost(ctx context.Context, userID int64, photoUrl string, payload CreatePostPayload) (newPost repo.CreatePostRow, err error)
-	GetPosts(ctx context.Context, category, search, seed, cursor string) (posts []repo.GetFeedPostsRow, err error)
+	GetPosts(ctx context.Context, category, search, seed, cursor string, sessionTime float64) (PostsRsp, error)
 }
 
 type postsService struct {
@@ -98,10 +98,11 @@ func (s *postsService) CreatePost(ctx context.Context, userID int64, photoUrl st
 }
 
 type GetPostsQueries struct {
-	Category string `json:"category" validate:"omitempty"`
-	Search   string `json:"search" validate:"omitempty,max=100"`
-	Seed     int    `json:"seed" validate:"omitempty"`   // Session seed for deterministic
-	Cursor   string `json:"cursor" validate:"omitmepty"` // opaque cursor for pagination
+	Category    string  `json:"category" validate:"omitempty"`
+	Search      string  `json:"search" validate:"omitempty,max=100"`
+	Seed        string  `json:"seed" validate:"omitempty"`        // session seed for deterministic md5 hash
+	Cursor      string  `json:"cursor" validate:"omitempty"`      // opaque cursor for pagination
+	SessionTime float64 `json:"sessionTime" validate:"omitempty"` // Unix epoch seconds; used instead of NOW() so scores are stable across pages
 }
 
 // PostsPage is the paginated response for the feed endpoint.
@@ -110,7 +111,7 @@ type GetPostsQueries struct {
 type PostsRsp struct {
 	Posts       []repo.GetFeedPostsRow `json:"posts"`
 	HasNextPage bool                   `json:"hasNextPage"`
-	NextCursor  bool                   `json:"nextCursor,omitempty"`
+	NextCursor  string                 `json:"nextCursor,omitempty"`
 }
 
 // GetPosts fetches a deterministically-ordered page of feed posts.
@@ -129,24 +130,39 @@ type PostsRsp struct {
 // - len(posts) < 9 → HasNextPage is false, NextCursor is empty
 // - len(posts) == 9 → HasNextPage is true, NextCursor is set
 // - Empty category/search → all posts returned without filter applied
-func (s *postsService) GetPosts(ctx context.Context, category, search, seed, cursor string) (posts []repo.GetFeedPostsRow, err error) {
+func (s *postsService) GetPosts(ctx context.Context, category, search, seed, cursor string, sessionTime float64) (PostsRsp, error) {
 
-	posts, getPostsErr := s.repo.GetFeedPosts(ctx,
-		repo.GetFeedPostsParams{
-			Category: category,
-			Search:   search,
-			Page:     int32(page)})
-	if getPostsErr != nil {
-		err = fmt.Errorf("failed to get posts : %w", getPostsErr)
-		return
+	cursorScore, cursorPostID, err := decodeCursor(cursor)
+	if err != nil {
+		return PostsRsp{}, fmt.Errorf("invalid cursor %w", err)
 	}
 
-	return ensureCategoryVariety(posts), nil
-}
+	feedPosts, getPostsErr := s.repo.GetFeedPosts(ctx,
+		repo.GetFeedPostsParams{
+			Seed:         seed,
+			Category:     category,
+			Search:       search,
+			CursorScore:  cursorScore,
+			CursorPostID: cursorPostID,
+			SessionTime:  sessionTime,
+		},
+	)
+	if getPostsErr != nil {
+		return PostsRsp{}, fmt.Errorf("failed to get posts : %w", getPostsErr)
+	}
 
-// encodeCursor encodes a score and postID into an opaque cursor string.
-func encodeCursor(score float64, postID int64) string {
-	return fmt.Sprintf("%.15f:%d", score, postID)
+	// Build cursor from the SQL-ordered last post BEFORE category reordering
+	var nextCursor string
+	if len(feedPosts) == 9 {
+		last := feedPosts[len(feedPosts)-1]
+		nextCursor = encodeCursor(last.Score, last.PostID)
+	}
+
+	return PostsRsp{
+		Posts:       ensureCategoryVariety(feedPosts),
+		HasNextPage: len(feedPosts) == 9,
+		NextCursor:  nextCursor,
+	}, nil
 }
 
 // decodeCursor parses an opaque cursor string into score and postID.
@@ -175,6 +191,11 @@ func decodeCursor(cursor string) (float64, int64, error) {
 		return 0, 0, fmt.Errorf("invalid cursor post id: %w", err)
 	}
 	return score, postID, nil
+}
+
+// encodeCursor encodes a score and postID into an opaque cursor string.
+func encodeCursor(score float64, postID int64) string {
+	return strconv.FormatFloat(score, 'f', -1, 64) + ":" + strconv.FormatInt(postID, 10)
 }
 
 // ensureCategoryVariety reorders posts so that no two consecutive posts share

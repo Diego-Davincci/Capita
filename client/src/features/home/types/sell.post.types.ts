@@ -45,3 +45,10 @@ export interface SellPostRsp {
   postPhotoURL: string;
   registeredAt: Date;
 }
+
+/** Paginated feed response from GET /posts */
+export interface FeedPostsPage {
+  posts: FeedPosts[];
+  hasNextPage: boolean;
+  nextCursor: string;
+}

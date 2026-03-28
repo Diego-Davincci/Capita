@@ -17,6 +17,9 @@ type Querier interface {
 	// no connection state mutation (unlike setseed).
 	// Accepts a text seed generated client-side per browsing session.
 	// score = md5_hash_as_float × 0.5^(age_in_weeks), half-life = 7 days.
+	// Uses session_time (client-provided Unix epoch seconds) instead of NOW() so that
+	// scores are stable across all page requests in the same session — required for
+	// correct cursor-based pagination (time-varying scores break cursor boundaries).
 	// Cursor-based pagination: pass cursor_score=0 and cursor_post_id=0 for the first page.
 	// For subsequent pages, pass the score and postID of the last post from the previous page.
 	// Pass an empty string for category/search to skip those filters.

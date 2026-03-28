@@ -77,21 +77,21 @@ WITH scored_posts AS (
     s.name            AS "shopName",
     s.description     AS "shopDescription",
     (('x' || substr(md5($3::text || p.post_id::text), 1, 8))::bit(32)::bigint & 2147483647)::float8 / 2147483647.0
-      * POW(0.5, EXTRACT(EPOCH FROM NOW() - p.registered_at) / 604800.0) AS score
+      * POW(0.5, EXTRACT(EPOCH FROM to_timestamp($4::float8) - p.registered_at) / 604800.0) AS score
   FROM posts p
   LEFT JOIN users u ON u.user_id = p.user_id
   LEFT JOIN shop s ON s.user_id = p.user_id
-  WHERE ($4::text = '' OR p.category ILIKE $4::text)
+  WHERE ($5::text = '' OR p.category ILIKE $5::text)
   AND (
-    $5::text = ''
-    OR p.title       ILIKE '%' || $5::text || '%'
-    OR p.description ILIKE '%' || $5::text || '%'
-    OR u.username    ILIKE '%' || $5::text || '%'
-    OR s.name        ILIKE '%' || $5::text || '%'
+    $6::text = ''
+    OR p.title       ILIKE '%' || $6::text || '%'
+    OR p.description ILIKE '%' || $6::text || '%'
+    OR u.username    ILIKE '%' || $6::text || '%'
+    OR s.name        ILIKE '%' || $6::text || '%'
   )
 )
 SELECT "username", "userPicture", "postID", "userID", title, description, price, category,
-       "postPhotoURL", "registeredAt", "phoneNumber", "shopName", "shopDescription", score
+       "postPhotoURL", "registeredAt", "phoneNumber", "shopName", "shopDescription", score::float8
 FROM scored_posts
 WHERE ($1::float8 = 0 AND $2::bigint = 0)
    OR score < $1::float8
@@ -104,6 +104,7 @@ type GetFeedPostsParams struct {
 	CursorScore  float64 `json:"cursor_score"`
 	CursorPostID int64   `json:"cursor_post_id"`
 	Seed         string  `json:"seed"`
+	SessionTime  float64 `json:"session_time"`
 	Category     string  `json:"category"`
 	Search       string  `json:"search"`
 }
@@ -122,7 +123,7 @@ type GetFeedPostsRow struct {
 	PhoneNumber     pgtype.Text        `json:"phoneNumber"`
 	ShopName        pgtype.Text        `json:"shopName"`
 	ShopDescription pgtype.Text        `json:"shopDescription"`
-	Score           int32              `json:"score"`
+	Score           float64            `json:"score"`
 }
 
 // Returns posts ordered by a deterministic recency-biased score.
@@ -130,6 +131,9 @@ type GetFeedPostsRow struct {
 // no connection state mutation (unlike setseed).
 // Accepts a text seed generated client-side per browsing session.
 // score = md5_hash_as_float × 0.5^(age_in_weeks), half-life = 7 days.
+// Uses session_time (client-provided Unix epoch seconds) instead of NOW() so that
+// scores are stable across all page requests in the same session — required for
+// correct cursor-based pagination (time-varying scores break cursor boundaries).
 // Cursor-based pagination: pass cursor_score=0 and cursor_post_id=0 for the first page.
 // For subsequent pages, pass the score and postID of the last post from the previous page.
 // Pass an empty string for category/search to skip those filters.
@@ -138,6 +142,7 @@ func (q *Queries) GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]G
 		arg.CursorScore,
 		arg.CursorPostID,
 		arg.Seed,
+		arg.SessionTime,
 		arg.Category,
 		arg.Search,
 	)
