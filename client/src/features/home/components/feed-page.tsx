@@ -53,13 +53,16 @@ export const FeedPage = () => {
       {/* Feed */}
       <div className="w-full mt-10 flex flex-col">
         <h2 className="text-2xl font-semibold tracking-tight flex flex-col">
-          {q ? (
-            <>
-              Resultados para "{q}"
+          {q || category ? (
+            <p className="flex flex-col">
+              <span>
+                Resultados para "
+                {q ? q : <span className="capitalize">{category}</span>}"
+              </span>
               <span className="text-muted-foreground text-sm font-normal tracking-normal">
                 {posts.length} productos encontrados
               </span>
-            </>
+            </p>
           ) : (
             "Lo más Nuevo 🔥"
           )}
@@ -100,7 +103,20 @@ export const FeedPage = () => {
               {/* Scroll sentinel */}
               <div ref={sentinelRef} className="col-span-full h-1" />
             </>
-          ) : q || category ? (
+          ) : !q && category ? (
+            <div className="col-span-full flex justify-center items-center flex-col gap-y-2 my-10">
+              <div className="size-24 rounded-full border flex items-center justify-center border-primary/40 bg-violet-500/20">
+                <SearchX className="size-10 text-violet-300" />
+              </div>
+              <p className="font-semibold text-lg">
+                No encontramos posts en la categoría
+                <span className="capitalize">"{category}"</span>
+              </p>
+              <span className="w-1/2 text-muted-foreground text-center">
+                Intentá con otras categorías !
+              </span>
+            </div>
+          ) : q ? (
             <div className="col-span-full flex justify-center items-center flex-col gap-y-2 my-10">
               <div className="size-24 rounded-full border flex items-center justify-center border-primary/40 bg-violet-500/20">
                 <SearchX className="size-10 text-violet-300" />

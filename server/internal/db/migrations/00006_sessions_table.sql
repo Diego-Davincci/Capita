@@ -7,6 +7,7 @@ CREATE TABLE sessions(
     user_agent text NOT NULL DEFAULT '',
     ip_address varchar NOT NULL DEFAULT '',
     created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now(),
     expires_at timestamptz NOT NULL -- same as RT expiry
 );
 CREATE INDEX idx_session_user_id ON sessions(user_id);

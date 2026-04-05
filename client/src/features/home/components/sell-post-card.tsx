@@ -3,7 +3,7 @@ import { es } from "date-fns/locale";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, ShoppingBag, Store } from "lucide-react";
+import { ShoppingBag, Store } from "lucide-react";
 import { formatPrice, homeCategories, createWhatsappLink } from "../utils";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -71,7 +71,7 @@ export const SellPostCard = ({ sellPost }: Props) => {
         />
 
         {/* Like button */}
-        <div className="absolute top-3 right-3 flex gap-2">
+        {/* <div className="absolute top-3 right-3 flex gap-2">
           <Button
             size={"icon-sm"}
             variant={"secondary"}
@@ -81,7 +81,7 @@ export const SellPostCard = ({ sellPost }: Props) => {
           >
             <Heart />
           </Button>
-        </div>
+        </div> */}
       </div>
       {/* Information */}
       <div className="px-5 py-3 flex flex-col justify-between gap-y-2 h-78">
