@@ -20,6 +20,16 @@ type Post struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
+type Session struct {
+	SessionID    pgtype.UUID        `json:"session_id"`
+	UserID       int64              `json:"user_id"`
+	RefreshToken string             `json:"refresh_token"`
+	UserAgent    string             `json:"user_agent"`
+	IpAddress    string             `json:"ip_address"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt    pgtype.Timestamptz `json:"expires_at"`
+}
+
 type Shop struct {
 	UserID       int64              `json:"user_id"`
 	Name         pgtype.Text        `json:"name"`
@@ -37,6 +47,8 @@ type User struct {
 	Email        string             `json:"email"`
 	Username     string             `json:"username"`
 	Picture      string             `json:"picture"`
-	IsUserValid  bool               `json:"is_user_valid"`
 	RegisteredAt pgtype.Timestamptz `json:"registered_at"`
+	IsBlocked    bool               `json:"is_blocked"`
+	IsAdmin      bool               `json:"is_admin"`
+	LastSignInAt pgtype.Timestamptz `json:"last_sign_in_at"`
 }

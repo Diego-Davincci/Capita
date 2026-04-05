@@ -8,10 +8,12 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
 	"github.com/Diego-Davincci/Capita/internal/utils"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"golang.org/x/oauth2"
 )
 
@@ -20,7 +22,14 @@ type Service interface {
 	GetGoogleUserData(ctx context.Context, googleCode string) (userData googleUser, err error)
 	CheckUserEmail(email string) (err error)
 	UpsertUser(ctx context.Context, userData googleUser) (user repo.User, err error)
-	SetAuthCookies(w http.ResponseWriter, userID int64) (err error)
+	// SetAuthCookies creates tokens, inserts a new session, and sets cookies.
+	SetAuthCookies(ctx context.Context, w http.ResponseWriter, r *http.Request, userID int64) (err error)
+	// RotateSession updates an existing session with a new RT jti and sets new cookies.
+	RotateSession(ctx context.Context, w http.ResponseWriter, r *http.Request, userID int64, sessionID pgtype.UUID) (err error)
+	// CheckUserBlocked returns an error if the user is blocked.
+	CheckUserBlocked(ctx context.Context, userID int64) (err error)
+	// LogoutUser deletes the session and clears cookies.
+	LogoutUser(ctx context.Context, w http.ResponseWriter, refreshJTI string) (err error)
 }
 
 type authService struct {
@@ -125,12 +134,7 @@ func (s *authService) UpsertUser(ctx context.Context, userData googleUser) (user
 	return updatedUser, nil
 }
 
-func (s *authService) SetAuthCookies(w http.ResponseWriter, userID int64) (err error) {
-
-	refreshToken, accessToken, err := utils.CreateTokens(userID, s.config.RefreshTokenKey, s.config.AccessTokenKey, s.config.RefreshTokenTime, s.config.AccessTokenTime)
-	if err != nil {
-		return
-	}
+func (s *authService) setCookies(w http.ResponseWriter, refreshToken, accessToken string) {
 
 	// TODO: if we get a domain, set SameSite to 'lax'
 	var sameSite http.SameSite
@@ -147,5 +151,82 @@ func (s *authService) SetAuthCookies(w http.ResponseWriter, userID int64) (err e
 	http.SetCookie(w, &http.Cookie{Name: "rt", Value: refreshToken, Path: "/", Domain: domain, Secure: s.config.SecureCookies, HttpOnly: true, SameSite: sameSite, MaxAge: maxTime})
 	http.SetCookie(w, &http.Cookie{Name: "at", Value: accessToken, Path: "/", Domain: domain, Secure: s.config.SecureCookies, HttpOnly: true, SameSite: sameSite, MaxAge: maxTime})
 
-	return nil
+}
+
+// SetAuthCookies creates tokens, stores a session record, and sets cookies.
+// Returns the new access token JTI — used as the consistent session identifier in context.
+func (s *authService) SetAuthCookies(ctx context.Context, w http.ResponseWriter, r *http.Request, userID int64) (err error) {
+
+	refreshToken, accessToken, refreshJTI, _, err := utils.CreateTokens(userID, s.config.RefreshTokenKey, s.config.AccessTokenKey, s.config.RefreshTokenTime, s.config.AccessTokenTime)
+	if err != nil {
+		return
+	}
+
+	expiresAt := time.Now().Add(s.config.RefreshTokenTime)
+	_, err = s.repo.CreateSession(ctx, repo.CreateSessionParams{
+		UserID:       userID,
+		RefreshToken: refreshJTI,
+		UserAgent:    r.Header.Get("User-Agent"),
+		IpAddress:    r.RemoteAddr,
+		ExpiresAt:    pgtype.Timestamptz{Time: expiresAt, Valid: true},
+	})
+	if err != nil {
+		return
+	}
+
+	s.setCookies(w, refreshToken, accessToken)
+	return
+}
+
+func (s *authService) RotateSession(ctx context.Context, w http.ResponseWriter, r *http.Request, userID int64, sessionID pgtype.UUID) (err error) {
+	refreshToken, accessToken, refreshJTI, _, err := utils.CreateTokens(userID, s.config.RefreshTokenKey, s.config.AccessTokenKey, s.config.RefreshTokenTime, s.config.AccessTokenTime)
+	if err != nil {
+		return
+	}
+
+	// Update the existing session row with the new RF's jti
+	updateSessionParams := repo.UpdateSessionTokenParams{
+		RefreshToken: refreshJTI,
+		SessionID:    sessionID,
+		ExpiresAt: pgtype.Timestamptz{
+			Time:  time.Now().Add(s.config.RefreshTokenTime),
+			Valid: true,
+		},
+	}
+	err = s.repo.UpdateSessionToken(ctx, updateSessionParams)
+	if err != nil {
+		err = fmt.Errorf("could not update session on RotateSession %s", err)
+		return
+	}
+
+	s.setCookies(w, refreshToken, accessToken)
+	return
+}
+
+// CheckUserBlocked returns an error if the user's account has been blocked by an admin.
+func (s *authService) CheckUserBlocked(ctx context.Context, userID int64) (err error) {
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		err = fmt.Errorf("error fetching user inside CheckUserBlocked fn %s", err)
+		return
+	}
+
+	if user.IsBlocked {
+		return errors.New("user is blocked")
+	}
+
+	return
+}
+
+// LogoutUser revokes the session by access JTI and clears auth cookies.
+func (s *authService) LogoutUser(ctx context.Context, w http.ResponseWriter, refreshJTI string) (err error) {
+	if s.repo.DeleteSession(ctx, refreshJTI); err != nil {
+		err = fmt.Errorf("error revoking user session inside LogoutUser fn %s", err)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{Name: "at", MaxAge: -1, Path: "/"})
+	http.SetCookie(w, &http.Cookie{Name: "rf", MaxAge: -1, Path: "/"})
+
+	return
 }

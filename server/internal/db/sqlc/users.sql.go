@@ -12,7 +12,7 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (social_id, email, username, picture) VALUES ($1, $2, $3, $4) RETURNING user_id, social_id, email, username, picture, is_user_valid, registered_at
+INSERT INTO users (social_id, email, username, picture) VALUES ($1, $2, $3, $4) RETURNING user_id, social_id, email, username, picture, registered_at, is_blocked, is_admin, last_sign_in_at
 `
 
 type CreateUserParams struct {
@@ -36,14 +36,16 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Email,
 		&i.Username,
 		&i.Picture,
-		&i.IsUserValid,
 		&i.RegisteredAt,
+		&i.IsBlocked,
+		&i.IsAdmin,
+		&i.LastSignInAt,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT users.user_id as "userID", users.email, users.username, users.picture, users.is_user_valid as "isUserValid", shop."name" as "shopName", shop.description as "shopDescription", shop.phone_number as "phoneNumber"
+SELECT users.user_id as "userID", users.email, users.username, users.picture, users.is_blocked as "isBlocked", shop."name" as "shopName", shop.description as "shopDescription", shop.phone_number as "phoneNumber"
 FROM users 
 left join shop on users.user_id = shop.user_id
 WHERE users.user_id = $1
@@ -54,7 +56,7 @@ type GetUserByIDRow struct {
 	Email           string      `json:"email"`
 	Username        string      `json:"username"`
 	Picture         string      `json:"picture"`
-	IsUserValid     bool        `json:"isUserValid"`
+	IsBlocked       bool        `json:"isBlocked"`
 	ShopName        pgtype.Text `json:"shopName"`
 	ShopDescription pgtype.Text `json:"shopDescription"`
 	PhoneNumber     pgtype.Text `json:"phoneNumber"`
@@ -68,7 +70,7 @@ func (q *Queries) GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow
 		&i.Email,
 		&i.Username,
 		&i.Picture,
-		&i.IsUserValid,
+		&i.IsBlocked,
 		&i.ShopName,
 		&i.ShopDescription,
 		&i.PhoneNumber,
@@ -77,7 +79,7 @@ func (q *Queries) GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow
 }
 
 const getUserBySocialID = `-- name: GetUserBySocialID :one
-SELECT user_id, social_id, email, username, picture, is_user_valid, registered_at FROM users WHERE social_id = $1
+SELECT user_id, social_id, email, username, picture, registered_at, is_blocked, is_admin, last_sign_in_at FROM users WHERE social_id = $1
 `
 
 func (q *Queries) GetUserBySocialID(ctx context.Context, socialID string) (User, error) {
@@ -89,14 +91,16 @@ func (q *Queries) GetUserBySocialID(ctx context.Context, socialID string) (User,
 		&i.Email,
 		&i.Username,
 		&i.Picture,
-		&i.IsUserValid,
 		&i.RegisteredAt,
+		&i.IsBlocked,
+		&i.IsAdmin,
+		&i.LastSignInAt,
 	)
 	return i, err
 }
 
 const updateUser = `-- name: UpdateUser :one
-UPDATE users SET email =  $1, username = $2, picture = $3 WHERE user_id = $4 RETURNING user_id, social_id, email, username, picture, is_user_valid, registered_at
+UPDATE users SET email =  $1, username = $2, picture = $3 WHERE user_id = $4 RETURNING user_id, social_id, email, username, picture, registered_at, is_blocked, is_admin, last_sign_in_at
 `
 
 type UpdateUserParams struct {
@@ -120,8 +124,10 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.Email,
 		&i.Username,
 		&i.Picture,
-		&i.IsUserValid,
 		&i.RegisteredAt,
+		&i.IsBlocked,
+		&i.IsAdmin,
+		&i.LastSignInAt,
 	)
 	return i, err
 }

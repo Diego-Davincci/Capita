@@ -26,6 +26,7 @@ func (c *authController) GoogleOauthCallback(w http.ResponseWriter, r *http.Requ
 	googleCode := r.URL.Query().Get("code")
 
 	errRedirectURL := fmt.Sprintf("%s/login?err='problem with google login'", c.config.Website)
+	userBlockedRedirectURL := fmt.Sprintf("%s/login?err='user blocked'")
 
 	// Get google user data using oauth2
 	googleUser, err := c.service.GetGoogleUserData(r.Context(), googleCode)
@@ -52,8 +53,15 @@ func (c *authController) GoogleOauthCallback(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	// Check if user is blocked before issuing tokens
+	if err = c.service.CheckUserBlocked(r.Context(), user.UserID); err != nil {
+		log.Println(err)
+		http.Redirect(w, r, userBlockedRedirectURL, http.StatusSeeOther)
+		return
+	}
+
 	// Create access and refresh tokens and set cookies
-	if err = c.service.SetAuthCookies(w, user.UserID); err != nil {
+	if _, err = c.service.SetAuthCookies(r.Context(), w, r, user.UserID); err != nil {
 		log.Println(err)
 		http.Redirect(w, r, errRedirectURL, http.StatusSeeOther)
 		return
@@ -63,5 +71,13 @@ func (c *authController) GoogleOauthCallback(w http.ResponseWriter, r *http.Requ
 }
 
 func (c *authController) Logout(w http.ResponseWriter, r *http.Request) {
-	utils.WriteResponse(w, http.StatusOK, nil, "")
+	accessJTI := r.Context().Value(utils.SessionIDContextKey).(string)
+
+	if err := c.service.LogoutUser(r.Context(), w, accessJTI); err != nil {
+		log.Println("error during logout", err)
+		utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
+		return
+	}
+
+	utils.WriteResponse(w, http.StatusOK, nil, "sesión cerrada exitosamente")
 }

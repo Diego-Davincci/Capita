@@ -21,7 +21,7 @@ func NewAuthMiddleware(service Service, repo repo.Querier, config utils.Config) 
 
 func (m *middleware) Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Get both access and refresh tokens
+		// (1) - Get both access and refresh tokens
 		refreshToken, err := r.Cookie("rt")
 		if err != nil {
 			log.Println("no rt cookie present", err)
@@ -35,15 +35,25 @@ func (m *middleware) Auth(next http.Handler) http.Handler {
 			return
 		}
 
-		// Check first access token, if token is invalid, send unauthorized
-		_, atErr := utils.ValidateToken(accessToken.Value, m.config.AccessTokenKey)
+		// (2) - Validate AT signature
+		atClaims, atErr := utils.ValidateToken(accessToken.Value, m.config.AccessTokenKey)
 		if atErr == utils.ErrInvalidToken {
 			log.Println(atErr)
 			utils.WriteResponse(w, http.StatusUnauthorized, nil, "petición no autorizada")
 			return
 		}
 
-		// Check second the refresh token, if it's invalid, send unauthorized
+		// (3) AT is valid — NO DB hit, trust the JWT signature + short expiry
+		if atErr == nil {
+			// Still need 'at id' in context for logout. Read it from the AT claims.
+			atClaims, _ := utils.ValidateToken(accessToken.Value, m.config.AccessTokenKey)
+			ctx := context.WithValue(r.Context(), utils.UserContextKey, atClaims.UserID)
+			ctx = context.WithValue(ctx, utils.SessionIDContextKey, atClaims.ID) // access JTI
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
+		// (4) - AT is expired, check now the refresh token, if it's invalid, send unauthorized
 		rtClaims, rtErr := utils.ValidateToken(refreshToken.Value, m.config.RefreshTokenKey)
 		if rtErr != nil {
 			log.Println(rtErr)
@@ -51,7 +61,7 @@ func (m *middleware) Auth(next http.Handler) http.Handler {
 			return
 		}
 
-		// If access token is expired, create both new tokens
+		// (5) If access token is expired, create both new tokens
 		if atErr == utils.ErrExpiredToken {
 			// Get User
 			user, err := m.repo.GetUserByID(r.Context(), rtClaims.UserID)
@@ -61,28 +71,33 @@ func (m *middleware) Auth(next http.Handler) http.Handler {
 				return
 			}
 
-			// Check in the DB user is valid
-			if !user.IsUserValid {
-				log.Printf("user is not valid %#v\n", user)
+			// Revoke the current session - if it fails don't throw 5xx error, just print message
+			revokeSessionErr := m.repo.RevokeSessionByAccessJTI(r.Context(), atClaims.ID)
+			if revokeSessionErr != nil {
+				log.Printf("could not revoke this user session %#v\n", user)
+			}
+
+			// Check if user is blocked
+			if user.IsBlocked {
+				log.Printf("user is blocked %#v\n", user)
 				utils.WriteResponse(w, http.StatusUnauthorized, nil, "petición no autorizada")
 				return
 			}
 
-			// Set new auth cookies with new tokens
-			if err := m.service.SetAuthCookies(w, user.UserID); err != nil {
+			// (6) Issue new tokens + create new session (full rotation)
+			sessionID, err := m.service.SetAuthCookies(r.Context(), w, r, user.UserID)
+			if err != nil {
 				log.Println("error setting auth cookies", err)
 				utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
 				return
 			}
 
 			ctx := context.WithValue(r.Context(), utils.UserContextKey, user.UserID)
+			ctx = context.WithValue(ctx, utils.SessionIDContextKey, sessionID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 
 		}
-
-		ctx := context.WithValue(r.Context(), utils.UserContextKey, rtClaims.UserID)
-		next.ServeHTTP(w, r.WithContext(ctx))
 
 	})
 }

@@ -10,8 +10,11 @@ import (
 
 type Querier interface {
 	CreatePost(ctx context.Context, arg CreatePostParams) (CreatePostRow, error)
+	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateShop(ctx context.Context, arg CreateShopParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteAllSessionsByUserID(ctx context.Context, userID int64) error
+	DeleteSession(ctx context.Context, refreshToken string) error
 	// Returns posts ordered by a deterministic recency-biased score.
 	// Uses md5(seed || post_id) for deterministic pseudo-random ordering — pure function,
 	// no connection state mutation (unlike setseed).
@@ -25,8 +28,10 @@ type Querier interface {
 	// Pass an empty string for category/search to skip those filters.
 	GetFeedPosts(ctx context.Context, arg GetFeedPostsParams) ([]GetFeedPostsRow, error)
 	GetPosts(ctx context.Context) ([]GetPostsRow, error)
+	GetSessionByRefreshToken(ctx context.Context, refreshToken string) (Session, error)
 	GetUserByID(ctx context.Context, userID int64) (GetUserByIDRow, error)
 	GetUserBySocialID(ctx context.Context, socialID string) (User, error)
+	UpdateSessionToken(ctx context.Context, arg UpdateSessionTokenParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 

@@ -2,7 +2,7 @@
 SELECT * FROM users WHERE social_id = $1;
 
 -- name: GetUserByID :one
-SELECT users.user_id as "userID", users.email, users.username, users.picture, users.is_user_valid as "isUserValid", shop."name" as "shopName", shop.description as "shopDescription", shop.phone_number as "phoneNumber"
+SELECT users.user_id as "userID", users.email, users.username, users.picture, users.is_blocked as "isBlocked", shop."name" as "shopName", shop.description as "shopDescription", shop.phone_number as "phoneNumber"
 FROM users 
 left join shop on users.user_id = shop.user_id
 WHERE users.user_id = $1;

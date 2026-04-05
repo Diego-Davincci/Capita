@@ -7,29 +7,38 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
-
-type JwtUserData struct {
-	jwt.RegisteredClaims
-	UserID int64 `json:"userID"`
-}
 
 var (
 	ErrExpiredToken = errors.New("token has expired")
 	ErrInvalidToken = errors.New("token invalid")
 )
 
-// Create both refresh and access tokens
-func CreateTokens(userID int64, refreshTokenKey, accessTokenKey string, refreshTokenTime, accessTokenTime time.Duration) (refreshToken, accessToken string, err error) {
+// JwtUserData holds the JWT claims for Cápita tokens.
+// The JTI (unique token ID) is stored in RegisteredClaims.ID.
+type JwtUserData struct {
+	jwt.RegisteredClaims
+	UserID int64 `json:"userID"`
+}
+
+// CreateTokens creates a refresh token + access token pair.
+// Returns the signed token strings and their JTI UUIDs (used for session tracking).
+func CreateTokens(userID int64, refreshTokenKey, accessTokenKey string, refreshTokenTime, accessTokenTime time.Duration) (refreshToken, accessToken, refreshJTI, accessJTI string, err error) {
+
+	refreshJTI = uuid.NewString()
+	accessJTI = uuid.NewString()
 
 	refreshTokenExpiryTime := jwt.NewNumericDate(time.Now().Add(refreshTokenTime))
 	accessTokenExpiryTime := jwt.NewNumericDate(time.Now().Add(accessTokenTime))
 
 	refreshTokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, JwtUserData{UserID: userID, RegisteredClaims: jwt.RegisteredClaims{
+		ID:        refreshJTI, // jti claim
 		Issuer:    "Cápita servers",
 		ExpiresAt: refreshTokenExpiryTime,
 	}})
 	accessTokenClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, JwtUserData{UserID: userID, RegisteredClaims: jwt.RegisteredClaims{
+		ID:        accessJTI, // jti claim
 		Issuer:    "Cápita servers",
 		ExpiresAt: accessTokenExpiryTime,
 	}})
