@@ -15,7 +15,7 @@ export const useStore = create<State & Actions>()((set) => ({
     username: "",
     email: "",
     picture: "",
-    isUserValid: true,
+    isBlocked: true,
     shopName: null,
     shopDescription: null,
     phoneNumber: null,

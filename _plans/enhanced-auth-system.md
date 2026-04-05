@@ -336,7 +336,7 @@ func (s *authService) setCookies(w http.ResponseWriter, refreshToken, accessToke
 
 ---
 
-### 8. `server/internal/auth/middleware.go`
+### 8. `server/internal/auth/middleware.go` ✅
 
 **Before** (current code):
 
@@ -442,7 +442,7 @@ Key differences from before:
 
 ---
 
-### 9. `server/internal/auth/controller.go`
+### 9. `server/internal/auth/controller.go` ✅
 
 **`GoogleOauthCallback`** — already has blocked check + updated `SetAuthCookies` call. One fix needed: `SetAuthCookies` no longer returns `accessJTI`, it returns just `error`.
 
@@ -505,7 +505,7 @@ func (c *authController) Logout(w http.ResponseWriter, r *http.Request) {
 
 ---
 
-### 10. Client changes (minimal — no admin)
+### 10. Client changes (minimal — no admin) ✅
 
 **`client/src/features/auth/types/index.ts`** — remove `isUserValid`, add `isBlocked`:
 

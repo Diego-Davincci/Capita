@@ -3,7 +3,7 @@ export interface User {
   email: string;
   username: string;
   picture: string;
-  isUserValid: boolean;
+  isBlocked: boolean;
   shopName?: string | null;
   shopDescription?: string | null;
   phoneNumber?: string | null;

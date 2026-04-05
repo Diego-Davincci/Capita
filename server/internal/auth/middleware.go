@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	repo "github.com/Diego-Davincci/Capita/internal/db/sqlc"
 	"github.com/Diego-Davincci/Capita/internal/utils"
@@ -45,59 +46,61 @@ func (m *middleware) Auth(next http.Handler) http.Handler {
 
 		// (3) AT is valid — NO DB hit, trust the JWT signature + short expiry
 		if atErr == nil {
-			// Still need 'at id' in context for logout. Read it from the AT claims.
-			atClaims, _ := utils.ValidateToken(accessToken.Value, m.config.AccessTokenKey)
 			ctx := context.WithValue(r.Context(), utils.UserContextKey, atClaims.UserID)
-			ctx = context.WithValue(ctx, utils.SessionIDContextKey, atClaims.ID) // access JTI
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 
 		// (4) - AT is expired, check now the refresh token, if it's invalid, send unauthorized
 		rtClaims, rtErr := utils.ValidateToken(refreshToken.Value, m.config.RefreshTokenKey)
-		if rtErr != nil {
+		if rtErr != nil && rtErr != utils.ErrExpiredToken {
 			log.Println(rtErr)
 			utils.WriteResponse(w, http.StatusUnauthorized, nil, "petición no autorizada")
 			return
 		}
 
-		// (5) If access token is expired, create both new tokens
-		if atErr == utils.ErrExpiredToken {
-			// Get User
-			user, err := m.repo.GetUserByID(r.Context(), rtClaims.UserID)
-			if err != nil {
-				log.Println("error getting user by id", err)
-				utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
-				return
-			}
+		// (5) access token is expired and maybe refresh token as well
 
-			// Revoke the current session - if it fails don't throw 5xx error, just print message
-			revokeSessionErr := m.repo.RevokeSessionByAccessJTI(r.Context(), atClaims.ID)
-			if revokeSessionErr != nil {
-				log.Printf("could not revoke this user session %#v\n", user)
-			}
-
-			// Check if user is blocked
-			if user.IsBlocked {
-				log.Printf("user is blocked %#v\n", user)
-				utils.WriteResponse(w, http.StatusUnauthorized, nil, "petición no autorizada")
-				return
-			}
-
-			// (6) Issue new tokens + create new session (full rotation)
-			sessionID, err := m.service.SetAuthCookies(r.Context(), w, r, user.UserID)
-			if err != nil {
-				log.Println("error setting auth cookies", err)
-				utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
-				return
-			}
-
-			ctx := context.WithValue(r.Context(), utils.UserContextKey, user.UserID)
-			ctx = context.WithValue(ctx, utils.SessionIDContextKey, sessionID)
-			next.ServeHTTP(w, r.WithContext(ctx))
+		// Look up session
+		session, sessionErr := m.repo.GetSessionByRefreshToken(r.Context(), rtClaims.ID)
+		if sessionErr != nil {
+			log.Println("session not found for refresh token jti")
+			utils.WriteResponse(w, http.StatusUnauthorized, nil, "petición no autorizada")
 			return
-
 		}
+
+		// Check session expiry - if expired, delete it and force re-login
+		if session.ExpiresAt.Time.Before(time.Now()) {
+			log.Printf("session has expired for user with session %#v\n", session)
+			m.repo.DeleteSession(r.Context(), session.RefreshToken)
+			utils.WriteResponse(w, http.StatusUnauthorized, nil, "petición no autorizada")
+			return
+		}
+
+		// Fetch user, check is_blocked
+		user, err := m.repo.GetUserByID(r.Context(), rtClaims.UserID)
+		if err != nil {
+			log.Println("error getting user by id", err)
+			utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
+			return
+		}
+
+		if user.IsBlocked {
+			// Delete all sessions for this user
+			m.repo.DeleteAllSessionsByUserID(r.Context(), user.UserID)
+			utils.WriteResponse(w, http.StatusUnauthorized, nil, "Tu cuenta ha sido bloqueada. ¡Parece que te portaste muy mal! 🤡")
+			return
+		}
+
+		// (6) Rotate: update existing session with new RT jti, issue new cookies
+		if err := m.service.RotateSession(r.Context(), w, r, user.UserID, session.SessionID); err != nil {
+			log.Println("error rotating session", err)
+			utils.WriteResponse(w, http.StatusInternalServerError, nil, utils.ErrInternalServerProblem.Error())
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), utils.UserContextKey, user.UserID)
+		next.ServeHTTP(w, r.WithContext(ctx))
 
 	})
 }

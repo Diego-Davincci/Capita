@@ -220,7 +220,7 @@ func (s *authService) CheckUserBlocked(ctx context.Context, userID int64) (err e
 
 // LogoutUser revokes the session by access JTI and clears auth cookies.
 func (s *authService) LogoutUser(ctx context.Context, w http.ResponseWriter, refreshJTI string) (err error) {
-	if s.repo.DeleteSession(ctx, refreshJTI); err != nil {
+	if err = s.repo.DeleteSession(ctx, refreshJTI); err != nil {
 		err = fmt.Errorf("error revoking user session inside LogoutUser fn %s", err)
 		return
 	}

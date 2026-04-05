@@ -30,7 +30,7 @@ declare module "@tanstack/react-router" {
 }
 
 function App() {
-  const { loading, error } = useMe();
+  const { loading, error, isBlocked } = useMe();
 
   // If we detect a ?err query in the URL, that means google login failed for the user
   // const isLoginErr = window.location.href.includes("/login?err");
@@ -63,6 +63,20 @@ function App() {
             </Highlighter>
           </h1>
         </section>
+      </main>
+    );
+  }
+
+  if (isBlocked) {
+    return (
+      <main className="min-h-screen w-full flex items-center justify-center bg-linear-to-b from-[#1a0b2e] to-[#2d1b4e]">
+        <Alert variant={"destructive"} className="max-w-md">
+          <AlertCircleIcon />
+          <AlertTitle>{error?.name}</AlertTitle>
+          <AlertDescription>
+            <p>{error?.message}</p>
+          </AlertDescription>
+        </Alert>
       </main>
     );
   }

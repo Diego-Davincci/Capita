@@ -14,6 +14,7 @@ export const useMe = () => {
     */
 
   const [error, setError] = useState<ApiError | undefined>(undefined);
+  const [isBlocked, setIsBlocked] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   const updateUser = useStore((store) => store.updateUser);
@@ -36,5 +37,9 @@ export const useMe = () => {
     getUser();
   }, []);
 
-  return { error, loading };
+  if (error?.statusCode == 401 && error.message?.includes("bloque")) {
+    setIsBlocked(true);
+  }
+
+  return { error, loading, isBlocked };
 };
